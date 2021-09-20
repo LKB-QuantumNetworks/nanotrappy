@@ -1,0 +1,872 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Simulating atom trapping around nanostructures has never been easier.">
+      
+      
+      
+        <meta name="author" content="Jérémy Berroir & Adrien Bouscal">
+      
+      
+      <link rel="shortcut icon" href="../assets/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.2">
+    
+    
+      
+        <title>Setting up a simulation - nanotrappy Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.73f7c429.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.39b8e14a.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#4051b5">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+    
+  
+      
+    
+  <script>document.addEventListener("DOMContentLoaded",function(){document.body.addEventListener("click",function(e){if(e.target instanceof HTMLElement){var t=e.target.closest("a[href^=http]");t&&ga("send","event","outbound","click",t.href)}})})</script>
+
+         
+<meta property="og:type" content="website" />
+<meta property="og:title" content="nanotrappy Documentation - Tutorial" />
+<meta property="og:description" content="Simulating atom trapping around nanostructures has never been easier." />
+<meta property="og:url" content="None" />
+<meta property="og:image" content="assets/images/W1_v2.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="device-width" />
+<!-- 1080 before -->
+<meta property="og:image:height" content="568" />
+<!-- <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@squidfunk">
+  <meta name="twitter:creator" content="@squidfunk">
+  <meta name="twitter:title" content="nanotrappy Documentation - Tutorial">
+  <meta name="twitter:description" content="Simulating atom trapping around nanostructures has never been easier.">
+  <meta name="twitter:image" content="assets/images/W1_v2.png"> -->
+<link
+  rel="stylesheet"
+  href="../assets/stylesheets/overrides.c462ebf7.min.css"
+/>
+
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+      
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#state-insensitive-trap-around-a-nanofiber" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-announce">
+          <div class="md-announce__inner md-grid md-typeset">
+            
+<a href="https://github.com/jrmbr">
+  For updates follow <strong>@jrmbr and @abouscal</strong> on
+  <span class="twemoji twitter">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </span>
+  <strong>Github</strong>
+</a>
+
+          </div>
+        </aside>
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href=".." title="nanotrappy Documentation" class="md-header-nav__button md-logo" aria-label="nanotrappy Documentation">
+      
+  <img src="../assets/my_favicon_white.svg" alt="logo">
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      <div class="md-header-nav__ellipsis">
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
+            nanotrappy Documentation
+          </span>
+        </div>
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
+            
+              Setting up a simulation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/LKB-QuantumNetworks/nanotrappy" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    LKB/nanotrappy
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href=".." class="md-tabs__link">
+      Home
+    </a>
+  </li>
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link md-tabs__link--active">
+        Getting started
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../reference/atomicsystem/" class="md-tabs__link">
+        Reference
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../credits/" class="md-tabs__link">
+      Credits
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="nanotrappy Documentation" class="md-nav__button md-logo" aria-label="nanotrappy Documentation">
+      
+  <img src="../assets/my_favicon_white.svg" alt="logo">
+
+    </a>
+    nanotrappy Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/LKB-QuantumNetworks/nanotrappy" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    LKB/nanotrappy
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+
+  <li class="md-nav__item">
+    <a href=".." class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  
+
+
+  
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Getting started
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Getting started" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        <span class="md-nav__icon md-icon"></span>
+        Getting started
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../getting-started/" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Tutorial
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" class="md-nav__link md-nav__link--active">
+      Tutorial
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#use-the-pre-implemented-nanofiber-field-calculations" class="md-nav__link">
+    Use the pre-implemented nanofiber field calculations
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-the-beams-and-trapping-scheme" class="md-nav__link">
+    Creating the beams and trapping scheme
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specifying-the-atom-we-want-to-trap" class="md-nav__link">
+    Specifying the atom we want to trap
+  </a>
+  
+    <nav class="md-nav" aria-label="Specifying the atom we want to trap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-set-surfaces-for-the-van-der-waals-interactions" class="md-nav__link">
+    Optional : Set surfaces for the Van der Waals interactions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-simulation-object" class="md-nav__link">
+    Define the Simulation object
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-simulation-in-2-dimensions" class="md-nav__link">
+    Run the simulation in 2 dimensions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualizing-the-results" class="md-nav__link">
+    Visualizing the results
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../modeformatting/" class="md-nav__link">
+      Formatting your data
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../casimirpolder/" class="md-nav__link">
+      On Casimir Polder interactions
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
+    
+    <label class="md-nav__link" for="nav-3">
+      Reference
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Reference" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../reference/atomicsystem/" class="md-nav__link">
+      Atomic system
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../reference/simulation/" class="md-nav__link">
+      Simulation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../reference/trap/" class="md-nav__link">
+      Trap
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../reference/beam/" class="md-nav__link">
+      Beam
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../reference/viz/" class="md-nav__link">
+      Visualization
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+
+  <li class="md-nav__item">
+    <a href="../credits/" class="md-nav__link">
+      Credits
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#use-the-pre-implemented-nanofiber-field-calculations" class="md-nav__link">
+    Use the pre-implemented nanofiber field calculations
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-the-beams-and-trapping-scheme" class="md-nav__link">
+    Creating the beams and trapping scheme
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specifying-the-atom-we-want-to-trap" class="md-nav__link">
+    Specifying the atom we want to trap
+  </a>
+  
+    <nav class="md-nav" aria-label="Specifying the atom we want to trap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-set-surfaces-for-the-van-der-waals-interactions" class="md-nav__link">
+    Optional : Set surfaces for the Van der Waals interactions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-simulation-object" class="md-nav__link">
+    Define the Simulation object
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-simulation-in-2-dimensions" class="md-nav__link">
+    Run the simulation in 2 dimensions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualizing-the-results" class="md-nav__link">
+    Visualizing the results
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <h1 id="state-insensitive-trap-around-a-nanofiber">State insensitive trap around a nanofiber<a class="headerlink" href="#state-insensitive-trap-around-a-nanofiber" title="Permanent link">&para;</a></h1>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">nanotrappy</span>
+<span class="kn">import</span> <span class="nn">nanotrappy.trapping.atomicsystem</span> <span class="k">as</span> <span class="nn">Na</span>
+<span class="kn">import</span> <span class="nn">nanotrappy.trapping.beam</span> <span class="k">as</span> <span class="nn">Nb</span>
+<span class="kn">import</span> <span class="nn">nanotrappy.trapping.trap</span> <span class="k">as</span> <span class="nn">Nt</span>
+<span class="kn">import</span> <span class="nn">nanotrappy.trapping.simulation</span> <span class="k">as</span> <span class="nn">Ns</span>
+<span class="kn">import</span> <span class="nn">nanotrappy.utils.materials</span> <span class="k">as</span> <span class="nn">Nm</span>
+<span class="kn">import</span> <span class="nn">nanotrappy.utils.viz</span> <span class="k">as</span> <span class="nn">Nv</span>
+<span class="kn">import</span> <span class="nn">nanotrappy.utils.vdw</span> <span class="k">as</span> <span class="nn">vdw</span>
+<span class="kn">from</span> <span class="nn">nanotrappy.utils.physicalunits</span> <span class="kn">import</span> <span class="o">*</span>
+</code></pre></div>
+</td></tr></table>
+<p>In this tutorial we will reproduce the trapping schemes around a nanofiber discussed in Lacroûte et al. "A state-insensitive, compensated nanofiber trap" New J. Phys. 14 (2012).</p>
+<h2 id="use-the-pre-implemented-nanofiber-field-calculations">Use the pre-implemented nanofiber field calculations<a class="headerlink" href="#use-the-pre-implemented-nanofiber-field-calculations" title="Permanent link">&para;</a></h2>
+<h2 id="creating-the-beams-and-trapping-scheme">Creating the beams and trapping scheme<a class="headerlink" href="#creating-the-beams-and-trapping-scheme" title="Permanent link">&para;</a></h2>
+<p>There are many different designs that can be used for trapping atoms with evanescent fields.
+We have then to specify how many beams we want to use, at which wavelengths and powers.</p>
+<p>If the structures are pre-implemented in <code>nanotrappy</code>, the right modes will then be computed.
+If not, a folder containing the modes will have to be specified, consult the <a href="../modeformatting/">mode formatting</a> section to see how the modes have to be saved in order to be used by <code>nanotrappy</code>.</p>
+<p>Beam objects are the basic building blocks of your trap in <code>nanotrappy</code>.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">blue_beam</span> <span class="o">=</span> <span class="n">Nb</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span><span class="mf">1064e-9</span><span class="p">,</span><span class="s2">&quot;f&quot;</span><span class="p">,</span><span class="mi">25</span><span class="o">*</span><span class="n">mW</span><span class="p">)</span>
+<span class="n">red_beam</span> <span class="o">=</span> <span class="n">Nb</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span><span class="mf">780e-9</span><span class="p">,</span><span class="s2">&quot;f&quot;</span><span class="p">,</span><span class="mi">7</span><span class="o">*</span><span class="n">mW</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<p>Here we define two beams, blue- and red-detuned from the Cesium D2 line respectively.
+"f" means the beam is propagating forward, along the propagation axis of the waveguide that will be specified later. "b" stands for backwards.
+This is important as chiral effects can arise when coupling tightly focused light to quantum emitters for example.</p>
+<p>These beams are bundled into a trap object, where a propagation axis is specified.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">trap</span> <span class="o">=</span> <span class="n">Nt</span><span class="o">.</span><span class="n">Trap_beams</span><span class="p">(</span><span class="n">blue_beam</span><span class="p">,</span><span class="n">red_beam</span><span class="p">,</span><span class="n">propagation_axis</span><span class="o">=</span><span class="s2">&quot;Z&quot;</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<h2 id="specifying-the-atom-we-want-to-trap">Specifying the atom we want to trap<a class="headerlink" href="#specifying-the-atom-we-want-to-trap" title="Permanent link">&para;</a></h2>
+<p>This part is based on the <a href="https://arc-alkali-rydberg-calculator.readthedocs.io/en/latest/">Alkali Rydberg Calculator</a> library. Originally conceived for studying Rydberg atoms, we have included the hyperfine levels of such Alkali.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">5</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">syst</span> <span class="o">=</span> <span class="n">Na</span><span class="o">.</span><span class="n">atomicsystem</span><span class="p">(</span><span class="n">Caesium</span><span class="p">(),</span> <span class="n">Na</span><span class="o">.</span><span class="n">atomiclevel</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="n">S</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="n">f</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<p>An alkali atom has to be chosen, an atomic level from the fine structure (here the ground state of Cesium 6S&frac12;) and the F of the hyperfine level studied.
+Indeed the dipole force felt by the atoms depends on the hyperfine level they are in.</p>
+<h3 id="optional-set-surfaces-for-the-van-der-waals-interactions">Optional : Set surfaces for the Van der Waals interactions<a class="headerlink" href="#optional-set-surfaces-for-the-van-der-waals-interactions" title="Permanent link">&para;</a></h3>
+<p>See <a href="../casimirpolder/">the dedicated page</a> for more information. The nanofiber is a cylinder with axis of symmetry the propagation axis.
+We define then a cylinder centered at the origin of the grid, with 250 nm radius and with "Z" revolution axis.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">surface</span> <span class="o">=</span> <span class="n">vdw</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="mf">250e-9</span><span class="p">,</span><span class="s2">&quot;Z&quot;</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<h2 id="define-the-simulation-object">Define the Simulation object<a class="headerlink" href="#define-the-simulation-object" title="Permanent link">&para;</a></h2>
+<p>The simulation object will then be a bundle of everything needed to compute the trapping potentials.
+The right modes corresponding to the trapping scheme, the atomic level and the surface and material (for CP interactions).
+This class will be useful mostly for keeping the results of the simulation and visualisation purposes further on.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">7</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">Simul</span> <span class="o">=</span> <span class="n">Ns</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">syst</span><span class="p">,</span><span class="n">Nm</span><span class="o">.</span><span class="n">SiO2</span><span class="p">(),</span><span class="n">trap</span><span class="p">,</span><span class="n">datafolder</span><span class="p">,</span><span class="n">surface</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<h2 id="run-the-simulation-in-2-dimensions">Run the simulation in 2 dimensions<a class="headerlink" href="#run-the-simulation-in-2-dimensions" title="Permanent link">&para;</a></h2>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">8</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">trap2D</span> <span class="o">=</span> <span class="n">Simul</span><span class="o">.</span><span class="n">compute_potential</span><span class="p">(</span><span class="s2">&quot;XY&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<p>Careful that the simulation in 2D can be time consuming as the potential is computed point by point on the given grid.
+As an example, for a 100x100 grid, times of the order of 30s are expected.</p>
+<h2 id="visualizing-the-results">Visualizing the results<a class="headerlink" href="#visualizing-the-results" title="Permanent link">&para;</a></h2>
+<p>The <a href="../reference/viz/">viz</a> submodules has a few methods to visualise and analyze your results.
+The easiest is to plot the 2D potential with power sliders as follows :</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">9</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">slider_ax</span> <span class="o">=</span> <span class="n">Nv</span><span class="o">.</span><span class="n">plot_trap</span><span class="p">(</span><span class="n">Simul</span><span class="p">,</span><span class="s2">&quot;XY&quot;</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<p>It is important to return the image and sliders as this will ensure the sliders do not get stuck.</p>
+<p><a href="../images/nanofiber_plot.png"><img alt="Nanofiber plot" src="../images/nanofiber_plot.png" style="height:600px;width:600px" /></a></p>
+<p>We see here 2 trapping sites, one on each side of the fiber (around 230 nm from the surface each).
+We can also look at a cut in 1D for easier analysis.</p>
+<p>If you are satisfied, you can save your simulation with <code>Simul.save()</code>.
+This will create a new folder in your mode folder and save a JSON file with the list of parameters of the simulation as well as a NPY with the potentials (not summed).</p>
+<p>When you run a simulation <code>nanotrappy</code> looks in the results folder if a simulation with the same parameters has been already saved. If so, it just opens it without running the simulation again.</p>
+<p>A 1D simulation can also be run to look at how the different mf states are affected by the differential vector shift coming from the local circular polarisation of the light acting as a fictitious magnetic field.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">trap1D</span> <span class="o">=</span> <span class="n">Simul</span><span class="o">.</span><span class="n">compute_potential_1D</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">slider_ax</span> <span class="o">=</span> <span class="n">Nv</span><span class="o">.</span><span class="n">plot_trap1D</span><span class="p">(</span><span class="n">Simul</span><span class="p">,</span><span class="s2">&quot;X&quot;</span><span class="p">,[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">Simul</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</code></pre></div>
+</td></tr></table>
+<p><a href="../images/nanofiber_1D_splitting.png"><img alt="1D trap around a nanofiber" src="../images/nanofiber_1D_splitting.png" /></a></p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href="../getting-started/" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Installation
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../modeformatting/" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Formatting your data
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright &copy; 2020-2021 Jérémy Berroir & Adrien Bouscal
+          </div>
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+  <div class="md-footer-social">
+    
+      
+      
+        
+        
+      
+      <a href="https://github.com/jrmbr" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+      </a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/vendor.08c56446.min.js"></script>
+      <script src="../assets/javascripts/bundle.6ced434e.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      
+      <script>
+        app = initialize({
+          base: "..",
+          features: ['navigation.sections', 'navigation.tabs'],
+          search: Object.assign({
+            worker: "../assets/javascripts/worker/search.8c7e0a7e.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>
