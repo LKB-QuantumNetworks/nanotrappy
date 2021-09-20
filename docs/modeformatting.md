@@ -8,7 +8,7 @@ In order to be used by `nanotrappy`, the fields in the data folder have to have 
 The names of the files don't matter nor their order.
 
 !!! attention
-    The files must be numpy arrays stored in .npy files. The array must be done as follows
+The files must be numpy arrays stored in .npy files. The array must be done as follows
 
     [![mode.npy = lmbda, x, y, z, E][1]][1]
 
@@ -19,4 +19,4 @@ The names of the files don't matter nor their order.
 The program will check all the .npy files in the specified folder, open them and store the first element (the wavelength) in a list.
 It will then compare it to the specified wavelengths for trapping to check is the modes are available.
 
-[1]: ./images/mode_formatting.PNG
+[1]: ./images/mode_formatting.png
