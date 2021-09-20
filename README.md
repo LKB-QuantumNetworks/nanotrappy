@@ -30,6 +30,6 @@ in the repository folder. See the [Read the Docs][2] for more information.
 [2]: https://jrmbr.github.io/nanotrappy
 [3]: https://github.com/jrmbr/nanotrappy/blob/master/docs/images/nanofiber_plot.PNG -->
 
-[1]: https://github.com/LKB-QuantumNetworks/nanotrappy/blob/master/docs/images/nanotrappy_logo.png
+[1]: https://github.com/LKB-QuantumNetworks/nanotrappy/tree/main/docs/images/nanotrappy_logo.png
 [2]: https://LKB-QuantumNetworks.github.io/nanotrappy
-[3]: https://github.com/LKB-QuantumNetworks/nanotrappy/blob/master/docs/images/nanofiber_plot.PNG
+[3]: https://github.com/LKB-QuantumNetworks/nanotrappy/tree/main/docs/images/nanofiber_plot.PNG
