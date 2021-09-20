@@ -32,4 +32,4 @@ in the repository folder. See the [Read the Docs][2] for more information.
 
 [1]: https://github.com/LKB-QuantumNetworks/nanotrappy/tree/main/docs/images/nanotrappy_logo.png
 [2]: https://LKB-QuantumNetworks.github.io/nanotrappy
-[3]: https://github.com/LKB-QuantumNetworks/nanotrappy/tree/main/docs/images/nanofiber_plot.PNG
+[3]: https://github.com/LKB-QuantumNetworks/nanotrappy/tree/main/docs/images/nanofiber_plot.png
