@@ -1,0 +1,151 @@
+# Copyright (c) 2020-2021 Jérémy Berroir & Adrien Bouscal <jeremy.berroir@gmail.com>
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+
+# Project information
+site_name: nanotrappy Documentation
+site_author: Jérémy Berroir & Adrien Bouscal
+# site_url: https://squidfunk.github.io/mkdocs-material/
+site_description: >-
+  Simulating atom trapping around nanostructures has never been easier.
+
+# Repository
+repo_url: https://github.com/LKB-QuantumNetworks/nanotrappy
+repo_name: LKB/nanotrappy
+edit_uri: ""
+
+# Copyright
+copyright: Copyright &copy; 2020-2021 Jérémy Berroir & Adrien Bouscal
+
+# Configuration
+theme:
+  name: null
+  custom_dir: style
+
+  # 404 page
+  static_templates:
+    - 404.html
+
+  # Don't include MkDocs' JavaScript
+  include_search_page: false
+  search_index_only: true
+
+  # Default values, taken from mkdocs_theme.yml
+  language: en
+  features:
+    - navigation.sections
+    - navigation.tabs
+  palette:
+    scheme: default
+    primary: indigo
+    accent: indigo
+  font:
+    text: Roboto
+    code: Roboto Mono
+  favicon: assets/favicon.png
+  icon:
+    - repo: fontawesome/brands/github
+    - logo: assets/my_favicon.png
+      # logo
+  logo: assets/my_favicon_white.svg
+
+# Plugins
+plugins:
+  - search
+  - mkdocstrings
+
+  # - redirects:
+  #     redirect_maps:
+  #       extensions/admonition.md: reference/admonitions.md
+  #       extensions/codehilite.md: reference/code-blocks.md
+  #       extensions/footnotes.md: reference/footnotes.md
+  #       extensions/metadata.md: reference/meta-tags.md
+  #       extensions/permalinks.md: setup/setting-up-navigation.md #permalink
+  #       extensions/pymdown.md: reference/admonitions.md
+  #       plugins/revision-date.md: setup/adding-a-git-repository.md #revision-date
+  #       plugins/search.md: setup/setting-up-site-search.md
+  #       releases/4.md: upgrading.md #upgrading-from-4x-to-5x
+  #       releases/5.md: upgrading.md #upgrading-from-3x-to-4x
+  #       releases/changelog.md: changelog.md
+  #       setup/adding-social-links.md: setup/setting-up-the-footer.md
+  #       sponsorship.md: insiders.md
+  # - minify:
+  #     minify_html: true
+
+# Customization
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jrmbr
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - abbr
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: jrmbr
+      repo: nanotrappy
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Page tree
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started.md
+      - Tutorial: tutorial.md
+      - Formatting your data: modeformatting.md
+      - On Casimir Polder interactions: casimirpolder.md
+
+  - Reference:
+      - Atomic system: reference/atomicsystem.md
+      - Simulation: reference/simulation.md
+      - Trap: reference/trap.md
+      - Beam: reference/beam.md
+      - Visualization: reference/viz.md
+  - Credits: credits.md

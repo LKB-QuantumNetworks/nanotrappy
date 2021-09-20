@@ -1,0 +1,9 @@
+*.pyc
+/.ipynb_checkpoints
+/.vscode
+/site
+.npy
+.json
+/dist/
+/*.egg-info
+/perso
