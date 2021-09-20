@@ -121,5 +121,5 @@ Simul.save()
 [3]: casimirpolder.md
 [4]: troubleshooting.md
 [5]: reference/viz.md
-[6]: ./images/nanofiber_plot.PNG
+[6]: ./images/nanofiber_plot.png
 [7]: ./images/nanofiber_1D_splitting.png
