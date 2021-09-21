@@ -1,5 +1,5 @@
 ---
-template: overrides/main.html
+template: main.html
 title: On Casimir-Polder interactions and surfaces implemented in nanotrappy
 ---
 

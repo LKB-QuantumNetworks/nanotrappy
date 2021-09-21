@@ -23,7 +23,7 @@ site_name: nanotrappy Documentation
 site_author: Jérémy Berroir & Adrien Bouscal
 # site_url: https://squidfunk.github.io/mkdocs-material/
 site_description: >-
-  Simulating atom trapping around nanostructures has never been easier.
+  Simulating atom trapping around nanostructures has never been easier. Easy to set up in 5 minutes.
 
 # Repository
 repo_url: https://github.com/LKB-QuantumNetworks/nanotrappy
@@ -35,8 +35,8 @@ copyright: Copyright &copy; 2020-2021 Jérémy Berroir & Adrien Bouscal
 
 # Configuration
 theme:
-  name: null
-  custom_dir: style
+  name: material
+  custom_dir: docs/theme_override_home/ #style
 
   # 404 page
   static_templates:
@@ -89,10 +89,10 @@ plugins:
   #     minify_html: true
 
 # Customization
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/jrmbr
+# extra:
+#   social:
+#     - icon: fontawesome/brands/github
+#       link: https://github.com/jrmbr
 
 # Extensions
 markdown_extensions:
@@ -148,4 +148,6 @@ nav:
       - Trap: reference/trap.md
       - Beam: reference/beam.md
       - Visualization: reference/viz.md
-  - Credits: credits.md
+
+  - Credits:
+      - Credits: credit.md

@@ -1,5 +1,5 @@
 ---
-template: overrides/main.html
+template: main.html
 title: Formatting of the computed modes of the electric field
 ---
 
@@ -10,7 +10,7 @@ The names of the files don't matter nor their order.
 !!! attention
 The files must be numpy arrays stored in .npy files. The array must be done as follows
 
-    [![mode.npy = lmbda, x, y, z, E][1]][1]
+    mode.npy : np.array(lambda, x, y, z, E)
 
     where E is a 4-dimensional np.array of size **(3,len(x),len(y),len(z))**.
 
