@@ -1,5 +1,0 @@
-QProgressBar#progressBar {
-  border-radius: 2px;
-  text-align: center;
-  color: white;
-}
