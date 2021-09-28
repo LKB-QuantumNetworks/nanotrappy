@@ -5,7 +5,9 @@ from .trapping.atomicsystem import atomicsystem, atomiclevel
 from .trapping.beam import Beam, BeamPair
 from .trapping.trap import Trap_beams
 from .trapping.simulation import Simulation
+from .trapping.structures import Nanofiber
+from .trapping.geometry import AxisX, AxisY, AxisZ, PlaneXY, PlaneXZ, PlaneYZ
 
 from .utils.materials import *
 from .utils.viz import Viz
-from .utils.vdw import Plane, Cylinder, NoSurface
+from .utils.vdw import PlaneSurface, CylindricalSurface, NoSurface

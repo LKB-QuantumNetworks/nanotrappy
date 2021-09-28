@@ -3,6 +3,14 @@ import sys, os
 
 
 def set_axis_index(axis):
+    """Set index of axis in the XYZ basis
+
+    Args:
+        axis (str): chose axis, among X, Y and Z
+
+    Returns:
+        int: index of the chosen axis in the XYZ basis
+    """
     if axis.upper() == "X":
         return 0
     elif axis.upper() == "Y":

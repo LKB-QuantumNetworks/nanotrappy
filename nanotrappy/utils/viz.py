@@ -6,9 +6,7 @@ from operator import itemgetter
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from scipy.signal import find_peaks
-from nanotrappy.utils.physicalunits import *
-from nanotrappy.utils.utils import *
-from nanotrappy.utils.lineslicer import LineSlice
+
 import re
 import itertools
 import mplcursors
@@ -49,10 +47,8 @@ import matplotlib
 # matplotlib.rc("font", **font)
 matplotlib.rcParams["axes.unicode_minus"] = False
 
-from PyQt5.QtCore import QFile, QThread, pyqtSignal, QObject, pyqtSlot
 
-
-class Viz(QObject):
+class Viz:
     """Class that contains all the visualization methods.
 
     Attributes:
@@ -65,17 +61,13 @@ class Viz(QObject):
 
     """
 
-    _signal = pyqtSignal()
-    benchmark = pyqtSignal(float)
-    finished = pyqtSignal()
-
     def __init__(self, simul, trapping_axis):
         # Trapping_axis is the one perpendicular to the surface if one is defined
         super().__init__()
         self.trapping_axis = trapping_axis
         self.simul = simul
 
-    def plot_trap(self, plane, mf=0, Pranges=[10, 10], increments=[0.1, 0.1]):
+    def plot_trap(self, mf=0, Pranges=[10, 10], increments=[0.1, 0.1]):
         """Shows a 2D plot of the total potential with power sliders
         Only available if a 2D simulation has been run.
 
@@ -107,216 +99,202 @@ class Viz(QObject):
             )
 
         _, mf = check_mf(self.simul.atomicsystem.f, mf)
-        coord1, coord2 = set_axis_from_plane(plane, self.simul)
-        mf_index = int(mf + self.simul.atomicsystem.f)
-        trap = np.real(self.simul.total_potential())[:, :, mf_index]
-        trap_noCP = np.real(self.simul.total_potential_noCP[:, :, mf_index])
-        fig, (ax, ax2) = plt.subplots(nrows=2, ncols=1)
-        plt.subplots_adjust(left=0.5, bottom=0.1)
-        # the norm TwoSlopeNorm allows to fix the 0 of potential to the white color, so that we can easily distinguish between positive and negative values of the potential
-        a = ax.pcolormesh(
-            coord1 / nm,
-            coord2 / nm,
-            np.transpose(trap),
-            shading="gouraud",
-            norm=colors.TwoSlopeNorm(
-                vmin=min(np.min(trap_noCP), -0.001), vcenter=0, vmax=max(np.max(trap_noCP) * 2, 0.001)
-            ),
-            cmap="seismic_r",
-        )
-        cbar = plt.colorbar(a)
-        cbar.set_label("Total potential (mK)", rotation=270, labelpad=12, fontsize=14)
 
-        ax.set_xlabel("%s (nm)" % (plane[0].lower()), fontsize=14)
-        ax.set_ylabel("%s (nm)" % (plane[1].lower()), fontsize=14)
-        plt.setp(ax.spines.values(), linewidth=1.5)
-        ax.tick_params(axis="both", which="major", labelsize=14)
-        ax.set_title("2D plot of trapping potential \n for mf = %s in the %s plane" % (mf, plane), fontsize=18)
+        dimension = self.simul.geometry.get_dimension()
+        # coord1, coord2 = set_axis_from_plane(plane, self.simul)
+        if dimension == 2:
+            mf_index = int(mf + self.simul.atomicsystem.f)
 
-        ax.margins(x=0)
-        axcolor = "lightgoldenrodyellow"
-        slider_ax = []
-        axes = []
+            axis1, axis2 = self.simul.geometry.get_base_axes()
+            coord1 = axis1.fetch_in(self.simul)
+            coord2 = axis2.fetch_in(self.simul)
+            # coord1, coord2 = getattr(self.simul, axis1.name), getattr(self.simul, axis2.name)
 
-        for (k, beam) in enumerate(self.simul.trap.beams):
-            axes.append(plt.axes([0.15 + k * 0.08, 0.1, 0.03, 0.75], facecolor=axcolor))
-            slider_ax.append(
-                Slider(
-                    axes[k],
-                    "Power \n Beam %s (mW)" % (k + 1),
-                    0,
-                    Pranges[k],
-                    valinit=self.simul.trap.beams[k].get_power() * 1e3,
-                    valstep=increments[k],
-                    orientation="vertical",
+            trap = np.real(self.simul.total_potential())[:, :, mf_index]
+            trap_noCP = np.real(self.simul.total_potential_noCP[:, :, mf_index])
+            fig, ax = plt.subplots()
+            plt.subplots_adjust(left=0.5, bottom=0.1)
+            # the norm TwoSlopeNorm allows to fix the 0 of potential to the white color, so that we can easily distinguish between positive and negative values of the potential
+            a = ax.pcolormesh(
+                coord1 / nm,
+                coord2 / nm,
+                np.transpose(trap),
+                shading="gouraud",
+                norm=colors.TwoSlopeNorm(
+                    vmin=min(np.min(trap_noCP), -0.001), vcenter=0, vmax=max(np.max(trap_noCP) * 2, 0.001)
+                ),
+                cmap="seismic_r",
+            )
+            cbar = plt.colorbar(a)
+            cbar.set_label("Total potential (mK)", rotation=270, labelpad=12, fontsize=14)
+
+            ax.set_xlabel("%s (nm)" % (self.simul.geometry.name[0].lower()), fontsize=14)
+            ax.set_ylabel("%s (nm)" % (self.simul.geometry.name[1].lower()), fontsize=14)
+            plt.setp(ax.spines.values(), linewidth=1.5)
+            ax.tick_params(axis="both", which="major", labelsize=14)
+            ax.set_title(
+                "2D plot of trapping potential \n for mf = %s in the %s plane" % (mf, self.simul.geometry.name),
+                fontsize=18,
+            )
+
+            ax.margins(x=0)
+            axcolor = "lightgoldenrodyellow"
+            slider_ax = []
+            axes = []
+
+            for (k, beam) in enumerate(self.simul.trap.beams):
+                axes.append(plt.axes([0.15 + k * 0.08, 0.1, 0.03, 0.75], facecolor=axcolor))
+                slider_ax.append(
+                    Slider(
+                        axes[k],
+                        "Power \n Beam %s (mW)" % (k + 1),
+                        0,
+                        Pranges[k],
+                        valinit=self.simul.trap.beams[k].get_power() * 1e3,
+                        valstep=increments[k],
+                        orientation="vertical",
+                    )
                 )
+
+        elif dimension == 1:
+            mf_index = mf + [self.simul.atomicsystem.f]
+
+            # x = getattr(self.simul, self.simul.geometry.name)
+            x = self.simul.geometry.fetch_in(self.simul)
+            fig, ax = plt.subplots()
+            plt.subplots_adjust(bottom=0.27)
+            jet = cm = plt.get_cmap("Greys")
+            cNorm = colors.Normalize(vmin=-1, vmax=len(mf))
+            scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+            a = []
+
+            trap = np.real(self.simul.total_potential()[0])
+            trap_noCP = np.real(self.simul.total_potential_noCP)
+            ax.set_xlabel("%s (nm)" % (self.simul.geometry.name), fontsize=14)
+            ax.set_ylabel("E (mK)", fontsize=14)
+            plt.setp(ax.spines.values(), linewidth=1.5)
+            ax.axhline(y=0, color="black", linestyle="--", linewidth=2)
+            ax.tick_params(axis="both", which="major", labelsize=14)
+            ax.set_title(
+                "1D plot of trapping potential \n for mf = %s along %s " % (mf, self.simul.geometry.name), fontsize=18
             )
 
-        def updateP(val):
-            P = []
-            for (k, slider) in enumerate(slider_ax):
-                P.append(slider.val * mW)
-            self.simul.trap.set_powers(P)
-            trap_2D = self.simul.total_potential()[:, :, mf_index]
-            a.set_array(np.transpose(np.real(self.simul.total_potential_noCP[:, :, mf_index])).ravel())
-            a.autoscale()
-            a.set_array(np.transpose(np.real(trap_2D)).ravel())
-            fig.canvas.draw_idle()
-
-        for slider in slider_ax:
-            slider.on_changed(updateP)
-
-        s1, s2 = np.transpose(trap).shape
-        LnTr = LineSlice(a, s1, s2, coord1 / nm, coord2 / nm, ax2)
-
-        plt.show()
-
-        return fig, ax, slider_ax
-
-    def plot_trap1D(self, axis, mf=0, Pranges=[10, 10], increments=[0.1, 0.1]):
-        """Shows a 1D plot of the total potential with power sliders
-        Only available if a 1D simulation has been run.
-
-        Args:
-            axis (str): As we are dealing with 1D plots, we have to specify
-                the axis along which we are looking the trap.
-            mf (int or list): Mixed mf state we want to plot. If a list is given,
-                all the specified mf states will be showed. Default to 0.
-            Pranges (list): List with the maximum values of the beam powers we
-                want to display on the sliders. Defaults to [10,10]
-        Raise:
-            TypeError: if only a 2D computation of the potential has been done
-            before plotting.
-
-        Returns:
-            (tuple): containing:
-
-                - fig: figure
-                - ax: axis of figure
-                - slider_ax: sliders (needed for interactivity of the sliders)
-        """
-
-        if np.ndim(self.simul.total_potential()) >= 3:
-            raise TypeError("This method can only be used if a 1D computation of the potential has been done.")
-        if len(Pranges) != len(self.simul.trap.beams):
-            raise ValueError(
-                "When specifying the upper ranges of P for plotting, you have to give as many as many values as there are beams."
-            )
-
-        _, mf = check_mf(self.simul.atomicsystem.f, mf)
-
-        x = set_axis_from_axis(axis, self.simul)
-        fig, ax = plt.subplots()
-        plt.subplots_adjust(bottom=0.27)
-        jet = cm = plt.get_cmap("Greys")
-        cNorm = colors.Normalize(vmin=-1, vmax=len(mf))
-        scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
-        a = []
-
-        mf_index = mf + [self.simul.atomicsystem.f]
-
-        trap = np.real(self.simul.total_potential())
-        trap_noCP = np.real(self.simul.total_potential_noCP)
-        ax.set_xlabel("%s (nm)" % (axis.lower()), fontsize=14)
-        ax.set_ylabel("E (mK)", fontsize=14)
-        plt.setp(ax.spines.values(), linewidth=1.5)
-        ax.axhline(y=0, color="black", linestyle="--", linewidth=2)
-        ax.tick_params(axis="both", which="major", labelsize=14)
-        ax.set_title("1D plot of trapping potential \n for mf = %s along %s " % (mf, axis), fontsize=18)
-
-        for k in range(len(mf_index)):
-            colorVal = "k"  # scalarMap.to_rgba(k)
-            a = a + plt.plot(
-                x / nm,
-                trap[:, mf_index[k]],
-                color=colorVal,
-                label="m$_f$ = %s" % (mf[k]),
-                linewidth=2 + 3 / len(self.simul.mf_all),
-            )
-
-        if len(mf) == 1 and len(self.simul.trap.beams) == 2:
-            (b,) = plt.plot(
-                x / nm,
-                np.real(self.simul.trap.beams[0].get_power() * np.real(self.simul.potentials[0, :, mf_index[0]])),
-                color="blue",
-                linewidth=2,
-            )
-            (r,) = plt.plot(
-                x / nm,
-                np.real(self.simul.trap.beams[1].get_power() * np.real(self.simul.potentials[1, :, mf_index[0]])),
-                color="red",
-                linewidth=2,
-            )
-        else:
-            pass
-            # plt.legend()
-
-        axcolor = "lightgoldenrodyellow"
-        slider_ax = []
-        axes = []
-        for (k, beam) in enumerate(self.simul.trap.beams):
-            axes.append(plt.axes([0.25, 0.15 - k * 0.1, 0.6, 0.03], facecolor=axcolor))
-            slider_ax.append(
-                Slider(
-                    axes[k],
-                    "Power \n Beam %s (mW)" % (k + 1),
-                    0,
-                    Pranges[k],
-                    valinit=self.simul.trap.beams[k].get_power() * 1e3,
-                    valstep=increments[k],
+            for k in range(len(mf_index)):
+                colorVal = "k"  # scalarMap.to_rgba(k)
+                a = a + plt.plot(
+                    x / nm,
+                    trap[:, mf_index[k]],
+                    color=colorVal,
+                    label="m$_f$ = %s" % (mf[k]),
+                    linewidth=2 + 3 / len(self.simul.mf_all),
                 )
-            )
-            slider_ax[k].label.set_size(14)
-
-        cursor = mplcursors.cursor(
-            a, highlight=True, highlight_kwargs=_custom_highlight_kwargs, annotation_kwargs=_custom_annotation_kwargs
-        )
-
-        @cursor.connect("add")
-        def on_add(sel):
-            artist = sel.artist
-            label = artist.get_label() or ""
-            mf = self.simul.atomicsystem.f + int(label.split()[2])
-
-            label = f"Choice : {label}"
-            idx = int(sel.target.index)
-
-            temp_vec = self.simul.total_vecs[idx, mf]
-            temp_vec = np.abs(temp_vec) ** 2
-            decomp = f"State : {vec_to_string(temp_vec)}"
-
-            x, y = sel.target
-            textx = f"x = {x:.1f} nm"
-            texty = f"y = {y:.2f} mK"
-
-            size = max(len(textx), len(texty), len(decomp))
-            label = label.center(size, "-")
-            text = f"{label}\n{textx}\n{texty}\n{decomp}"
-            sel.annotation.set_text(text)
-
-        def updateP(val):
-            for selection in cursor.selections:
-                cursor.remove_selection(selection)
-            P = []
-            for (k, slider) in enumerate(slider_ax):
-                P.append(slider.val * mW)
-            self.simul.trap.set_powers(P)
-            trap = np.real(self.simul.total_potential())
-            for k in range(len(mf)):
-                trap_k = trap[:, mf_index[k]]
-                a[k].set_ydata(trap_k)
 
             if len(mf) == 1 and len(self.simul.trap.beams) == 2:
-                b.set_ydata(
-                    np.real(self.simul.trap.beams[0].get_power() * np.real(self.simul.potentials[0, :, mf_index[0]]))
+                (b,) = plt.plot(
+                    x / nm,
+                    np.real(self.simul.trap.beams[0].get_power() * np.real(self.simul.potentials[0, :, mf_index[0]])),
+                    color="blue",
+                    linewidth=2,
                 )
-                r.set_ydata(
-                    np.real(self.simul.trap.beams[1].get_power() * np.real(self.simul.potentials[1, :, mf_index[0]]))
+                (r,) = plt.plot(
+                    x / nm,
+                    np.real(self.simul.trap.beams[1].get_power() * np.real(self.simul.potentials[1, :, mf_index[0]])),
+                    color="red",
+                    linewidth=2,
                 )
+            else:
+                pass
+                # plt.legend()
+
+            axcolor = "lightgoldenrodyellow"
+            slider_ax = []
+            axes = []
+            for (k, beam) in enumerate(self.simul.trap.beams):
+                axes.append(plt.axes([0.25, 0.15 - k * 0.1, 0.6, 0.03], facecolor=axcolor))
+                slider_ax.append(
+                    Slider(
+                        axes[k],
+                        "Power \n Beam %s (mW)" % (k + 1),
+                        0,
+                        Pranges[k],
+                        valinit=self.simul.trap.beams[k].get_power() * 1e3,
+                        valstep=increments[k],
+                    )
+                )
+                slider_ax[k].label.set_size(14)
+
+            cursor = mplcursors.cursor(
+                a,
+                highlight=True,
+                highlight_kwargs=_custom_highlight_kwargs,
+                annotation_kwargs=_custom_annotation_kwargs,
+            )
+
+            @cursor.connect("add")
+            def on_add(sel):
+                artist = sel.artist
+                label = artist.get_label() or ""
+                mf = self.simul.atomicsystem.f + int(label.split()[2])
+
+                label = f"Choice : {label}"
+                idx = int(sel.target.index)
+
+                temp_vec = self.simul.total_vecs[idx, mf]
+                temp_vec = np.abs(temp_vec) ** 2
+                decomp = f"State : {vec_to_string(temp_vec)}"
+
+                x, y = sel.target
+                textx = f"x = {x:.1f} nm"
+                texty = f"y = {y:.2f} mK"
+
+                size = max(len(textx), len(texty), len(decomp))
+                label = label.center(size, "-")
+                text = f"{label}\n{textx}\n{texty}\n{decomp}"
+                sel.annotation.set_text(text)
+
+        def updateP(val):
+            if dimension == 1:
+                for selection in cursor.selections:
+                    cursor.remove_selection(selection)
+                P = []
+                for (k, slider) in enumerate(slider_ax):
+                    P.append(slider.val * mW)
+                self.simul.trap.set_powers(P)
+                trap = np.real(self.simul.total_potential()[0])  ### weird [0]
+                for k in range(len(mf)):
+                    trap_k = trap[:, mf_index[k]]
+                    a[k].set_ydata(trap_k)
+
+                if len(mf) == 1 and len(self.simul.trap.beams) == 2:
+                    b.set_ydata(
+                        np.real(
+                            self.simul.trap.beams[0].get_power() * np.real(self.simul.potentials[0, :, mf_index[0]])
+                        )
+                    )
+                    r.set_ydata(
+                        np.real(
+                            self.simul.trap.beams[1].get_power() * np.real(self.simul.potentials[1, :, mf_index[0]])
+                        )
+                    )
+
+            elif dimension == 2:
+                P = []
+                for (k, slider) in enumerate(slider_ax):
+                    P.append(slider.val * mW)
+                self.simul.trap.set_powers(P)
+                trap_2D = self.simul.total_potential()[:, :, mf_index]
+                a.set_array(np.transpose(np.real(self.simul.total_potential_noCP[:, :, mf_index])).ravel())
+                a.autoscale()
+                a.set_array(np.transpose(np.real(trap_2D)).ravel())
+
             fig.canvas.draw_idle()
 
         for slider in slider_ax:
             slider.on_changed(updateP)
+
+        # s1, s2 = np.transpose(trap).shape
+        # LnTr = LineSlice(a, s1, s2, coord1 / nm, coord2 / nm, ax2)
+
         plt.show()
 
         return fig, ax, slider_ax
@@ -365,13 +343,16 @@ class Viz(QObject):
             mf_index, edge, y_outside, trap_1D_Y_outside = self.get_coord_trap_outside_structure(
                 self.trapping_axis, coord1, coord2, mf, edge_no_surface=None
             )
-            ymin_ind, y_min, trap_depth, trap_prominence = self.get_min_trap(y_outside, trap_1D_Y_outside)
+            ymin_ind, y_min, trap_depth, trap_prominence, _ = self.get_min_trap(y_outside, trap_1D_Y_outside)
             omegax, omegay, omegaz = 0, 0, 0
             if not np.isnan(y_min):
                 min_pos = np.zeros(3)
                 min_pos[axis_index] = y_min + edge
                 min_pos[axis1_index] = coord1
                 min_pos[axis2_index] = coord2
+                _, _, y_outside, trap_1D_Y_outside = self.get_coord_trap_outside_structure(
+                    self.trapping_axis, coord1, coord2, mf, edge_no_surface=None
+                )
                 omegay = self.get_trapfreq(y_outside, trap_1D_Y_outside)
                 _, _, x_outside, trap_1D_X_allw = self.get_coord_trap_outside_structure(
                     axis1_name,
@@ -442,9 +423,9 @@ class Viz(QObject):
             index_2 = np.argmin(np.abs(axis2 - coord2))
 
             (ly,) = ax[0].plot(y_outside, trap_1D_Y_outside, linewidth=3, color="darkblue")
-            (point,) = ax[0].plot(y_outside[ymin_ind], trap_1D_Y_outside[ymin_ind], "ro")
             ax[0].set_ylim([-2, 2])
             if not np.isnan(y_min):
+                (point,) = ax[0].plot(y_outside[int(ymin_ind)], trap_1D_Y_outside[int(ymin_ind)], "ro")
                 (lx,) = ax[1].plot(axis1, trap_1D_X_allw, linewidth=2, color="royalblue")
                 (lz,) = ax[2].plot(axis2, trap_1D_Z_allw, linewidth=2, color="royalblue")
                 (point1,) = ax[1].plot(axis1[index_1], trap_1D_X_allw[index_1], "ro")
@@ -472,7 +453,7 @@ class Viz(QObject):
                 mf_index, edge, y_outside, trap_1D_Y = self.get_coord_trap_outside_structure(
                     self.trapping_axis, coord1, coord2, mf, edge_no_surface=None
                 )
-                ymin_ind, y_min, trap_depth, trap_prominence = self.get_min_trap(y_outside, trap_1D_Y)
+                ymin_ind, y_min, trap_depth, trap_prominence, _ = self.get_min_trap(y_outside, trap_1D_Y)
                 print("y_min = ", y_min)
                 ax[0].set_ylim([-2, trap_1D_Y.max()])
                 axcolor = "lightgoldenrodyellow"
@@ -482,6 +463,9 @@ class Viz(QObject):
                     min_pos[axis_index] = y_min + edge
                     min_pos[axis1_index] = coord1
                     min_pos[axis2_index] = coord2
+                    _, _, y_outside, trap_1D_Y = self.get_coord_trap_outside_structure(
+                        self.trapping_axis, coord1, coord2, mf, edge_no_surface=None
+                    )
                     omegay = self.get_trapfreq(y_outside, trap_1D_Y)
                     _, _, x_outside, trap_1D_X = self.get_coord_trap_outside_structure(
                         axis1_name,
@@ -625,31 +609,35 @@ class Viz(QObject):
         if np.ndim(trap_outside) >= 3:
             raise TypeError("The trap given must be one-dimensional")
 
-        trap_pos_index, trap_pos, _, _ = self.get_min_trap(y_outside, trap_outside, edge_no_surface)
-        if np.isnan(trap_pos):
+        min_pos_index, min_pos, depth, height, height_idx = self.get_min_trap(y_outside, trap_outside, edge_no_surface)
+        if np.isnan(min_pos):
             trap_outside3 = np.concatenate((trap_outside, trap_outside, trap_outside))
             y_outside3 = np.concatenate(
                 (y_outside - (y_outside[-1] - y_outside[0]), y_outside, y_outside + (y_outside[-1] - y_outside[0]))
             )
-            trap_pos_index, trap_pos, _, _ = self.get_min_trap(y_outside3, trap_outside3, edge_no_surface)
-            if np.isnan(trap_pos):
+            min_pos_index, min_pos, depth, height, height_idx = self.get_min_trap(
+                y_outside3, trap_outside3, edge_no_surface
+            )
+            if np.isnan(min_pos):
                 print("[WARNING] No local minimum along the axis. Cannot compute trapping frequency.")
                 return 0
             else:
                 pass
 
-        try:
-            fit = np.polyfit(y_outside[5:], trap_outside[5:], 40)
-            pass
-        except np.linalg.LinAlgError:
-            fit = np.polyfit(y_outside[5:], trap_outside[5:], 20)
+        height_pos = y_outside[height_idx]  ## Gives the position of the barrier
+        yleft = min_pos - (min_pos - height_pos) / 2
+        yright = min_pos + (min_pos - height_pos) / 2
+        idx_left = find_nearest(y_outside, yleft)
+        idx_right = find_nearest(y_outside, yright)
+
+        fit = np.polyfit(y_outside[idx_left:idx_right], trap_outside[idx_left:idx_right], 2)
 
         p = np.poly1d(fit)
         der_fit = np.real(np.gradient(p(y_outside), y_outside))
         der2_fit = np.gradient(der_fit, y_outside)
-        index_min = np.argmin(np.abs(y_outside - trap_pos))
+        index_min = np.argmin(np.abs(y_outside - min_pos))
         moment2 = der2_fit[index_min]
-        trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.atom.mass)) * (1 / (2 * np.pi))
+        trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.mass)) * (1 / (2 * np.pi))
         return trap_freq
 
     def get_coord_trap_outside_structure(self, axis, coord1, coord2, mf=0, edge_no_surface=None):
@@ -704,6 +692,11 @@ class Viz(QObject):
             elif len(peaks[0]) == 1:
                 index_edge = peaks[0][0]
                 edge = coord[index_edge - 1]
+                y_outside = coord[index_edge:] - edge
+                trap_outside = trap[index_edge:]
+            elif len(peaks[0]) == 2 and type(self.simul.surface[0]).__name__ == "Cylinder":
+                index_edge = peaks[0][-1]
+                edge = coord[index_edge + 1]
                 y_outside = coord[index_edge:] - edge
                 trap_outside = trap[index_edge:]
             elif len(peaks[0]) == 2:
@@ -783,9 +776,7 @@ class Viz(QObject):
                     der2_fit = np.gradient(der_fit, yout)
                     index_min = np.argmin(np.abs(yout - min_pos))
                     moment2 = der2_fit[index_min]
-                    trap_freq = (
-                        np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.atom.mass)) * (1 / (2 * np.pi)) / kHz
-                    )
+                    trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.mass)) * (1 / (2 * np.pi)) / kHz
 
                 ##################
 
@@ -804,72 +795,6 @@ class Viz(QObject):
         nan_to_zeros(res_pos, res_height, res_depth, res_freq)
         res_pos *= 1e9
 
-        return res_pos, res_depth, res_height, res_freq
-
-    @pyqtSlot()
-    def optimize_gui(self, ymin=0, Pmin1=0, Pmax1=10, Pstep1=1, Pmin2=0, Pmax2=10, Pstep2=1):
-        Prange1 = list(reversed(np.arange(Pmin1, Pmax1, Pstep1)))
-        Prange2 = np.arange(Pmin2, Pmax2, Pstep2)
-
-        res_pos = np.zeros((len(Prange1), len(Prange2)))
-        res_depth = np.zeros((len(Prange1), len(Prange2)))
-        res_height = np.zeros((len(Prange1), len(Prange2)))
-        res_freq = np.zeros((len(Prange1), len(Prange2)))
-
-        yidx = find_nearest(self.simul.axis, ymin)
-        yout = self.simul.axis[yidx:]
-
-        t0 = time.time()
-        for i, P1 in enumerate(Prange1):
-            for j, P2 in enumerate(Prange2):
-                # for i, P1 in enumerate(Prange):
-                #     for j, P2 in enumerate(Prange):
-                self.simul.trap.set_powers([P1, P2])
-                pot = np.real(self.simul.total_potential()[yidx:, 0])
-                min_idx, min_pos, depth, height, height_idx = self.get_min_trap(yout, pot)
-
-                ######### frequencies
-                if np.isnan(height_idx):
-                    trap_freq = 0
-                else:
-                    height_pos = yout[height_idx]  ## Gives the position of the barrier
-                    yleft = min_pos - (min_pos - height_pos) / 2
-                    yright = min_pos + (min_pos - height_pos) / 2
-                    idx_left = find_nearest(yout, yleft)
-                    idx_right = find_nearest(yout, yright)
-
-                    fit = np.polyfit(yout[idx_left:idx_right], pot[idx_left:idx_right], 2)
-
-                    p = np.poly1d(fit)
-                    der_fit = np.real(np.gradient(p(yout), yout))
-                    der2_fit = np.gradient(der_fit, yout)
-                    index_min = np.argmin(np.abs(yout - min_pos))
-                    moment2 = der2_fit[index_min]
-                    trap_freq = (
-                        np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.atom.mass)) * (1 / (2 * np.pi)) / kHz
-                    )
-
-                ##################
-
-                if abs(depth) > 10:
-                    depth = 0
-                if abs(height) > 10:
-                    height = 0
-
-                depth = abs(depth)
-                height = abs(height)
-                res_pos[i, j] = min_pos
-                res_depth[i, j] = depth
-                res_height[i, j] = height
-                res_freq[i, j] = trap_freq
-
-            self._signal.emit()
-            if i == 10:
-                self.benchmark.emit(time.time() - t0)
-        nan_to_zeros(res_pos, res_height, res_depth, res_freq)
-        res_pos *= 1e9
-        self.finished.emit()
-        self.optim_res = (res_pos, res_depth, res_height, res_freq)
         return res_pos, res_depth, res_height, res_freq
 
     def optimize_and_show(self, ymin=0, Pmin1=0, Pmax1=10, Pstep1=1, Pmin2=0, Pmax2=10, Pstep2=1):
@@ -1024,145 +949,6 @@ class Viz(QObject):
         plt.tight_layout(pad=0.2, h_pad=0, w_pad=0.1)
         plt.show()
         fig.savefig("optimizer_figure.pdf", dpi=600)
-
-    @pyqtSlot()
-    def optimize_and_show_gui(self, ymin=0, Pmin1=0, Pmax1=10, Pstep1=1, Pmin2=0, Pmax2=10, Pstep2=1):
-        ################################################################################################################
-        ############################################ Optimization procedure ############################################
-        ################################################################################################################
-
-        blockPrint()
-        # opt_pos, opt_depth, opt_height, opt_freq = self.optimize_gui(
-        #     ymin=ymin, Pmin1=Pmin1, Pmax1=Pmax1, Pstep1=Pstep1, Pmin2=Pmin2, Pmax2=Pmax2, Pstep2=Pstep2
-        # )
-        opt_pos, opt_depth, opt_height, opt_freq = self.optim_res
-        enablePrint()
-
-        ################################################################################################################
-        ################################################## Pretty show #################################################
-        ################################################################################################################
-
-        methods = [
-            None,
-            "none",
-            "nearest",
-            "bilinear",
-            "bicubic",
-            "spline16",
-            "spline36",
-            "hanning",
-            "hamming",
-            "hermite",
-            "kaiser",
-            "quadric",
-            "catrom",
-            "gaussian",
-            "bessel",
-            "mitchell",
-            "sinc",
-            "lanczos",
-        ]
-
-        # Prange1 = np.arange(Pmin1, Pmax1, Pstep1)
-        Prange1 = list(reversed(np.arange(Pmin1, Pmax1, Pstep1)))
-        Prange1 = np.asarray(Prange1)
-        Prange2 = np.arange(Pmin2, Pmax2, Pstep2)
-
-        # ax1 = plt.subplot(212)
-        ax1 = plt.subplot(223)
-        im1 = ax1.imshow(
-            opt_pos,
-            cmap="gnuplot2",
-            interpolation="lanczos",
-            extent=[Pmin2 / mW, Pmax2 / mW, Pmin1 / mW, Pmax1 / mW],
-            aspect="auto",
-        )
-        # for (j, i), label in np.ndenumerate(opt):
-        #     plt.text(i, j, label, ha="center", va="center")
-        plt.colorbar(im1, ax=ax1)
-        ax1.set_title("Trap position (nm)")
-        ax1.set_xlabel("P2 (mW)")
-        ax1.set_ylabel("P1 (mW)")
-
-        #################################
-        ax4 = plt.subplot(224)
-        im4 = ax4.imshow(
-            opt_freq,
-            cmap="gnuplot2",
-            interpolation="lanczos",
-            extent=[Pmin2 / mW, Pmax2 / mW, Pmin1 / mW, Pmax1 / mW],
-            aspect="auto",
-        )
-        # for (j, i), label in np.ndenumerate(opt):
-        #     plt.text(i, j, label, ha="center", va="center")
-        plt.colorbar(im4, ax=ax4)
-        ax4.set_title("Trap frequency (nm)")
-        ax4.set_xlabel("P2 (mW)")
-        ax4.set_ylabel("P1 (mW)")
-
-        plt.tight_layout()
-
-        ################################
-
-        # ax2 = plt.subplot(221)
-        # im2 = ax2.imshow(
-        #     opt_depth,
-        #     cmap="gnuplot2",
-        #     interpolation="lanczos",
-        #     extent=[Pmin2 / mW, Pmax2 / mW, Pmin1 / mW, Pmax1 / mW],
-        #     aspect="auto",
-        # )
-        # plt.colorbar(im2, ax=ax2)
-        # ax2.set_title("Trap depth (mK)")
-        # ax2.set_xlabel("P2 (mW)")
-        # ax2.set_ylabel("P1 (mW)")
-        # idxs2 = np.unravel_index(opt_depth.argmax(), opt_depth.shape)
-        # ax2.plot(
-        #     (Prange2[idxs2[1]] + 0.5 * Pstep2) / mW,
-        #     (Prange1[idxs2[0]] + 0.5 * Pstep1) / mW,
-        #     "o",
-        #     color="red",
-        #     markersize=12,
-        # )
-
-        ##################################
-
-        # ax3 = plt.subplot(222)
-        ax3 = plt.subplot(211)
-        im3 = ax3.imshow(
-            opt_height,
-            cmap="gnuplot2",
-            interpolation="lanczos",
-            extent=[Pmin2 / mW, Pmax2 / mW, Pmin1 / mW, Pmax1 / mW],
-            aspect="auto",
-        )
-        maximas = np.zeros(len(Prange1))
-        for i, _ in enumerate(Prange1):
-            maximas[i] = Prange2[np.argmax(opt_height[i, :])]
-        max_fit = np.polyfit(maximas / mW, Prange1 / mW, 2)
-        max_p = np.poly1d(max_fit)
-        a = ax3.plot(maximas / mW, max_p(maximas / mW), "--", color="white", lw=3)
-        cursor = mplcursors.cursor(
-            a,
-            highlight=True,  # , highlight_kwargs=_custom_highlight_kwargs, annotation_kwargs=_custom_annotation_kwargs
-        )
-        # ax3.plot(maximas / mW, Prange1 / mW, "o", color="green")
-        plt.colorbar(im3, ax=ax3)
-        ax3.set_title("Trap height (mK)")
-        ax3.set_xlabel("P2 (mW)")
-        ax3.set_ylabel("P1 (mW)")
-        idxs3 = np.unravel_index(opt_height.argmax(), opt_height.shape)
-        ax3.plot(
-            (Prange2[idxs3[1]] + 0.5 * Pstep2) / mW,
-            (Prange1[idxs3[0]] + 0.5 * Pstep1) / mW,
-            "o",
-            color="red",
-            markersize=12,
-        )
-
-        plt.suptitle(f"Optimal position found : P1 = {Prange1[idxs3[0]]/mW:.2f} mW, P2 = {Prange2[idxs3[1]]/mW:.2f} mW")
-        plt.tight_layout()
-        plt.show()
 
 
 class DiscreteSlider(Slider):
