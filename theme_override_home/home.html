@@ -289,6 +289,15 @@
     .md-footer-social {
         padding-top: 20px;
     }
+
+    a.team-link {
+        font-weight: bold;
+        color: rgb(255, 224, 0);
+    }
+
+    a.team-link:hover {
+        color: rgb(214, 192, 22);
+    }
 </style>
 
 <!-- Main site Entry button descriptions -->
@@ -299,6 +308,9 @@
             <div class="tx-hero__content">
                 <h1> Nanotrappy </h1>
                 <p> {{ config.site_description }}</p>
+                <p> Developed by
+                    <a class="team-link" href="http://www.quantumnetworks.lkb.ens.fr">LKB Quantum Network team</a>
+                </p>
                 <a href="{{ page.next_page.url | url }}" title="{{ page.next_page.title | striptags }}"
                     class="md-button md-button--primary">
                     Install
