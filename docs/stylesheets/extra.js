@@ -37,5 +37,10 @@ $(document).ready(function () {
           break;
       }
     });
+    $("#EU, #DAALI, #LKB, #SORBONNE, #CNRS, #ANR, #CDF, #ENS").hover(
+      function () {
+        $(this).css("cursor", "pointer");
+      }
+    );
   });
 });
