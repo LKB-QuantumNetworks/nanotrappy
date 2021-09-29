@@ -38,13 +38,14 @@ if __name__ == "__main__":
     Simul.compute()
     Simul.save()
 
-    viz = Viz(Simul, trapping_axis="X")
-    # fig, ax, slider_ax = viz.plot_trap(mf=range(-f4, f4 + 1), Pranges=[30, 10], increments=[0.1, 0.1])
-    fig, ax, slider_ax = viz.plot_trap(mf=0, Pranges=[10, 2], increments=[0.01, 0.01])
-    plt.show()
+    viz = Viz(Simul, trapping_axis="Y")
+    # # fig, ax, slider_ax = viz.plot_trap(mf=range(-f4, f4 + 1), Pranges=[30, 10], increments=[0.1, 0.1])
+    # fig, ax, slider_ax = viz.plot_trap(mf=0, Pranges=[10, 2], increments=[0.01, 0.01])
+    # plt.show()
 
-    e = viz.get_coord_trap_outside_structure()
-    plt.plot(e[0], e[1])
+    # e = viz.get_coord_trap_outside_structure()
+    # plt.plot(e[0], e[1])
 
+    viz.plot_3axis(mf=0, Pranges=[10, 10], increments=[0.1, 0.1])
     plt.show()
 # %%

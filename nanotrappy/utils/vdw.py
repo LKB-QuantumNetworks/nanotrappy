@@ -136,7 +136,7 @@ class CylindricalSurface(Surface):
         if np.abs(np.dot(ax1.to_normal_vector(), axis.to_normal_vector())) == 1:
             ax = ax1
             center_coord = self.axis.coordinates[0]
-        elif np.abs(np.dot(ax2, axis)) == 1:
+        elif np.abs(np.dot(ax2.to_normal_vector(), axis.to_normal_vector())) == 1:
             ax = ax2
             center_coord = self.axis.coordinates[1]
         else:

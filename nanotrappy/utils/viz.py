@@ -308,6 +308,55 @@ class Viz:
 
         return fig, ax, slider_ax
 
+    def restrict_trap_from_surfaces(self, mf=0):
+        """Returns the truncation of both the specified axis and the trap along that direction, setting 0 for the coordinate at the edge of the structure.
+
+        Args:
+            axis (str): axis along which we are looking at the trap.
+            coord1 (float): First coordinate on the orthogonal plane to the
+            trapping axis. If axis is Y, coord1 should be the one on X.
+            coord2 (float): Second coordinate on the orthogonal plane to the
+            trapping axis.
+            mf (int or list): Mixed mf state we want to analyze. Default to 0.
+            edge_no_surface (float): Position of the edge of the structure. Only needed when no Surface is specified. When a Surface object is given, it is found automatically with the CP masks. Defaults to None.
+
+        Raise:
+            TypeError: if only a 2D computation of the potential has been done before plotting.
+
+        Returns:
+            (tuple): containing:
+
+                - int: Index of the specified mf state in the array
+                - float: Position of the edge of the structure (taken either from the Surface object or given by the user).
+                - array: New coordinates, with 0 at the edge of the structure and negative values truncated.
+                - array: Corresponding truncation of the trapping potential.
+        """
+        _, mf = check_mf(self.simul.atomicsystem.f, mf)
+        mf_index = int(mf + self.simul.atomicsystem.f)
+
+        old_geometry = copy(self.simul.geometry)
+
+        self.simul.geometry = self.trapping_axis
+        coord_main = self.trapping_axis.fetch_in(self.simul)
+        trap_main = np.real(self.simul.compute())[0][:, mf_index]
+
+        self.simul.geometry = self.trapping_axis.normal_plane.get_base_axes()[0]
+        coord_1 = self.simul.geometry.fetch_in(self.simul)
+        trap_1 = np.real(self.simul.compute())[0][:, mf_index]
+
+        self.simul.geometry = self.trapping_axis.normal_plane.get_base_axes()[1]
+        coord_2 = self.simul.geometry.fetch_in(self.simul)
+        trap_2 = np.real(self.simul.compute())[0][:, mf_index]
+
+        self.simul.geometry = old_geometry
+
+        for surface in self.simul.surface:
+            coord_main, trap_main = surface.get_slab(coord_main, trap_main, self.simul, self.trapping_axis)
+
+        return coord_main, trap_main, coord_1, trap_1, coord_2, trap_2
+
+        # return mf_index, edge, y_outside, trap_outside
+
     def plot_3axis(self, mf=0, Pranges=[10, 10], increments=[0.1, 0.1]):
         """Shows 3 1D plots of the total potential with power sliders,
         and trapping frequencies for each axis if possible.
@@ -344,6 +393,7 @@ class Viz:
 
         main_axis = self.trapping_axis
         axis1, axis2 = self.trapping_axis.normal_plane.get_base_axes()
+        axis_name_list = [main_axis.name, axis1.name, axis2.name]
 
         main_axis_data = main_axis.fetch_in(self.simul)
         axis1_data, axis2_data = axis1.fetch_in(self.simul), axis2.fetch_in(self.simul)
@@ -351,36 +401,23 @@ class Viz:
         if len(self.simul.E[0].shape) != 4:
             print("[WARNING] 3D Electric fields must be fed in the Simulation class in order to use this function")
         else:
-            mf_index, edge, y_outside, trap_1D_Y_outside = self.get_coord_trap_outside_structure(
-                self.trapping_axis, coord1, coord2, mf, edge_no_surface=None
+            y_out_main, trap_out_main, y_out_1, trap_out_1, y_out_2, trap_out_2 = self.restrict_trap_from_surfaces(
+                mf=mf
             )
-            ymin_ind, y_min, trap_depth, trap_prominence, _ = self.get_min_trap(y_outside, trap_1D_Y_outside)
-            omegax, omegay, omegaz = 0, 0, 0
+            ymin_ind, y_min, trap_depth, trap_prominence, _ = self.get_min_trap(y_out_main, trap_out_main)
+
+            omega_1, omega_main, omega_2 = 0, 0, 0
             if not np.isnan(y_min):
                 min_pos = np.zeros(3)
-                min_pos[axis_index] = y_min + edge
-                min_pos[axis1_index] = coord1
-                min_pos[axis2_index] = coord2
-                _, _, y_outside, trap_1D_Y_outside = self.get_coord_trap_outside_structure(
-                    self.trapping_axis, coord1, coord2, mf, edge_no_surface=None
-                )
-                omegay = self.get_trapfreq(y_outside, trap_1D_Y_outside)
-                _, _, x_outside, trap_1D_X_allw = self.get_coord_trap_outside_structure(
-                    axis1_name,
-                    np.delete(min_pos, axis1_index)[0],
-                    np.delete(min_pos, axis1_index)[1],
-                    mf,
-                    edge_no_surface=None,
-                )
-                omegax = self.get_trapfreq(x_outside, trap_1D_X_allw)
-                _, _, z_outside, trap_1D_Z_allw = self.get_coord_trap_outside_structure(
-                    axis2_name,
-                    np.delete(min_pos, axis2_index)[0],
-                    np.delete(min_pos, axis2_index)[1],
-                    mf,
-                    edge_no_surface=None,
-                )
-                omegaz = self.get_trapfreq(z_outside, trap_1D_Z_allw)
+                min_pos[main_axis.index] = y_min  # + edge
+                min_pos[axis1.index] = main_axis.coordinates[0]
+                min_pos[axis2.index] = main_axis.coordinates[1]
+
+                omega_main = self.get_trapfreq(y_out_main, trap_out_main)
+
+                omega_1 = self.get_trapfreq(y_out_1, trap_out_1)
+
+                omega_2 = self.get_trapfreq(y_out_2, trap_out_2)
 
             fig, ax = plt.subplots(3, figsize=(15, 10))
             plt.subplots_adjust(left=0.25)
@@ -394,17 +431,17 @@ class Viz:
                     r"$\omega_%s =%.2f (kHz) $"
                     % (
                         self.trapping_axis,
-                        omegay * 1e-3,
+                        omega_main * 1e-3,
                     ),
                     r"$\omega_%s =%.2f (kHz) $"
                     % (
-                        axis1_name,
-                        omegax * 1e-3,
+                        axis1.name,
+                        omega_1 * 1e-3,
                     ),
                     r"$\omega_%s =%.2f (kHz) $"
                     % (
-                        axis2_name,
-                        omegaz * 1e-3,
+                        axis2.name,
+                        omega_2 * 1e-3,
                     ),
                 )
             )
@@ -430,21 +467,21 @@ class Viz:
                     )
                 )
 
-            index_1 = np.argmin(np.abs(axis1 - coord1))
-            index_2 = np.argmin(np.abs(axis2 - coord2))
+            index_1 = np.argmin(np.abs(axis1_data - main_axis.coordinates[0]))
+            index_2 = np.argmin(np.abs(axis2_data - main_axis.coordinates[1]))
 
-            (ly,) = ax[0].plot(y_outside, trap_1D_Y_outside, linewidth=3, color="darkblue")
+            (ly,) = ax[0].plot(y_out_main, trap_out_main, linewidth=3, color="darkblue")
             ax[0].set_ylim([-2, 2])
             if not np.isnan(y_min):
-                (point,) = ax[0].plot(y_outside[int(ymin_ind)], trap_1D_Y_outside[int(ymin_ind)], "ro")
-                (lx,) = ax[1].plot(axis1, trap_1D_X_allw, linewidth=2, color="royalblue")
-                (lz,) = ax[2].plot(axis2, trap_1D_Z_allw, linewidth=2, color="royalblue")
-                (point1,) = ax[1].plot(axis1[index_1], trap_1D_X_allw[index_1], "ro")
-                (point2,) = ax[2].plot(axis2[index_2], trap_1D_Z_allw[index_2], "ro")
+                (point,) = ax[0].plot(y_out_main[int(ymin_ind)], trap_out_main[int(ymin_ind)], "ro")
+                (lx,) = ax[1].plot(axis1_data, trap_out_1, linewidth=2, color="royalblue")
+                (lz,) = ax[2].plot(axis2_data, trap_out_2, linewidth=2, color="royalblue")
+                (point1,) = ax[1].plot(axis1_data[index_1], trap_out_1[index_1], "ro")
+                (point2,) = ax[2].plot(axis2_data[index_2], trap_out_2[index_2], "ro")
 
             else:
-                (lx,) = ax[1].plot(axis1, np.zeros((len(axis1),)), linewidth=2, color="royalblue")
-                (lz,) = ax[2].plot(axis2, np.zeros((len(axis2),)), linewidth=2, color="royalblue")
+                (lx,) = ax[1].plot(axis1_data, np.zeros((len(axis1_data),)), linewidth=2, color="royalblue")
+                (lz,) = ax[2].plot(axis2_data, np.zeros((len(axis2_data),)), linewidth=2, color="royalblue")
 
             plt.grid(alpha=0.5)
             for k in range(len(ax)):
@@ -461,50 +498,33 @@ class Viz:
                 for (k, slider) in enumerate(slider_ax):
                     P.append(slider.val * mW)
                 self.simul.trap.set_powers(P)
-                mf_index, edge, y_outside, trap_1D_Y = self.get_coord_trap_outside_structure(
-                    self.trapping_axis, coord1, coord2, mf, edge_no_surface=None
+                y_out_main, trap_out_main, y_out_1, trap_out_1, y_out_2, trap_out_2 = self.restrict_trap_from_surfaces(
+                    mf=mf
                 )
-                ymin_ind, y_min, trap_depth, trap_prominence, _ = self.get_min_trap(y_outside, trap_1D_Y)
-                print("y_min = ", y_min)
-                ax[0].set_ylim([-2, trap_1D_Y.max()])
-                axcolor = "lightgoldenrodyellow"
-                props = dict(boxstyle="round", facecolor=axcolor, alpha=0.5)
+                ymin_ind, y_min, trap_depth, trap_prominence, _ = self.get_min_trap(y_out_main, trap_out_main)
+
+                omega_1, omega_main, omega_2 = 0, 0, 0
                 if not np.isnan(y_min):
                     min_pos = np.zeros(3)
-                    min_pos[axis_index] = y_min + edge
-                    min_pos[axis1_index] = coord1
-                    min_pos[axis2_index] = coord2
-                    _, _, y_outside, trap_1D_Y = self.get_coord_trap_outside_structure(
-                        self.trapping_axis, coord1, coord2, mf, edge_no_surface=None
-                    )
-                    omegay = self.get_trapfreq(y_outside, trap_1D_Y)
-                    _, _, x_outside, trap_1D_X = self.get_coord_trap_outside_structure(
-                        axis1_name,
-                        np.delete(min_pos, axis1_index)[0],
-                        np.delete(min_pos, axis1_index)[1],
-                        mf,
-                        edge_no_surface=None,
-                    )
-                    omegax = self.get_trapfreq(x_outside, trap_1D_X)
-                    _, _, z_outside, trap_1D_Z = self.get_coord_trap_outside_structure(
-                        axis2_name,
-                        np.delete(min_pos, axis2_index)[0],
-                        np.delete(min_pos, axis2_index)[1],
-                        mf,
-                        edge_no_surface=None,
-                    )
+                    min_pos[main_axis.index] = y_min  # + edge
+                    min_pos[axis1.index] = main_axis.coordinates[0]
+                    min_pos[axis2.index] = main_axis.coordinates[1]
 
-                    omegaz = self.get_trapfreq(z_outside, trap_1D_Z)
+                    omega_main = self.get_trapfreq(y_out_main, trap_out_main)
 
-                    lx.set_ydata(trap_1D_X)
-                    lz.set_ydata(trap_1D_Z)
-                    point.set_data(y_outside[ymin_ind], trap_1D_Y[ymin_ind])
-                    point1.set_data(axis1[index_1], trap_1D_X[index_1])
-                    point2.set_data(axis2[index_2], trap_1D_Z[index_2])
+                    omega_1 = self.get_trapfreq(y_out_1, trap_out_1)
 
-                    ax[1].set_ylim([trap_1D_X.min(), trap_1D_X.max()])
-                    ax[2].set_ylim([trap_1D_Z.min(), trap_1D_Z.max()])
-                    ax[0].set_ylim([2 * trap_depth, 2 * trap_1D_Y.max()])
+                    omega_2 = self.get_trapfreq(y_out_2, trap_out_2)
+
+                    lx.set_ydata(trap_out_1)
+                    lz.set_ydata(trap_out_2)
+                    point.set_data(y_out_main[ymin_ind], trap_out_main[ymin_ind])
+                    point1.set_data(axis1_data[index_1], trap_out_1[index_1])
+                    point2.set_data(axis2_data[index_2], trap_out_2[index_2])
+
+                    ax[1].set_ylim([trap_out_1.min(), trap_out_1.max()])
+                    ax[2].set_ylim([trap_out_2.min(), trap_out_2.max()])
+                    ax[0].set_ylim([2 * trap_depth, 2 * trap_out_main.max()])
 
                     textstr = "\n".join(
                         (
@@ -513,17 +533,17 @@ class Viz:
                             r"$\omega_%s =%.2f (kHz) $"
                             % (
                                 self.trapping_axis,
-                                omegay * 1e-3,
+                                omega_main * 1e-3,
                             ),
                             r"$\omega_%s =%.2f (kHz) $"
                             % (
-                                axis1_name,
-                                omegax * 1e-3,
+                                axis1.name,
+                                omega_1 * 1e-3,
                             ),
                             r"$\omega_%s =%.2f (kHz) $"
                             % (
-                                axis2_name,
-                                omegaz * 1e-3,
+                                axis2.name,
+                                omega_2 * 1e-3,
                             ),
                         )
                     )
@@ -533,7 +553,7 @@ class Viz:
                     textstr = r"$\mathrm{depth}=%.2f (mK) $" % (trap_depth,)
 
                     box.set_text(textstr)
-                ly.set_ydata(np.squeeze(np.real(trap_1D_Y)))
+                ly.set_ydata(np.squeeze(np.real(trap_out_main)))
 
             for slider in slider_ax:
                 slider.on_changed(updateP)
@@ -650,47 +670,6 @@ class Viz:
         moment2 = der2_fit[index_min]
         trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.mass)) * (1 / (2 * np.pi))
         return trap_freq
-
-    def restrict_trap_from_surfaces(self, mf=0):
-        """Returns the truncation of both the specified axis and the trap along that direction, setting 0 for the coordinate at the edge of the structure.
-
-        Args:
-            axis (str): axis along which we are looking at the trap.
-            coord1 (float): First coordinate on the orthogonal plane to the
-            trapping axis. If axis is Y, coord1 should be the one on X.
-            coord2 (float): Second coordinate on the orthogonal plane to the
-            trapping axis.
-            mf (int or list): Mixed mf state we want to analyze. Default to 0.
-            edge_no_surface (float): Position of the edge of the structure. Only needed when no Surface is specified. When a Surface object is given, it is found automatically with the CP masks. Defaults to None.
-
-        Raise:
-            TypeError: if only a 2D computation of the potential has been done before plotting.
-
-        Returns:
-            (tuple): containing:
-
-                - int: Index of the specified mf state in the array
-                - float: Position of the edge of the structure (taken either from the Surface object or given by the user).
-                - array: New coordinates, with 0 at the edge of the structure and negative values truncated.
-                - array: Corresponding truncation of the trapping potential.
-        """
-        _, mf = check_mf(self.simul.atomicsystem.f, mf)
-        mf_index = int(mf + self.simul.atomicsystem.f)
-
-        coord = self.trapping_axis.fetch_in(self.simul)
-
-        old_geometry = copy(self.simul.geometry)
-        self.simul.geometry = self.trapping_axis
-        trap = np.real(self.simul.compute())[0][:, mf_index]
-        print("Trap", len(trap))
-        self.simul.geometry = old_geometry
-
-        for surface in self.simul.surface:
-            coord, trap = surface.get_slab(coord, trap, self.simul, self.trapping_axis)
-
-        return coord, trap
-
-        # return mf_index, edge, y_outside, trap_outside
 
     def ellipticity_plot(self, projection_axis):
         if self.simul.dimension == "2D":
