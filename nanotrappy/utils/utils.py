@@ -206,6 +206,11 @@ def find_nearest(array, value):
     return idx  # array[idx]
 
 
+def intersection(lst1, lst2):
+    lst3 = [value for value in lst1 if value in lst2]
+    return lst3
+
+
 def nan_to_zeros(*args):
     """Takes as many arrays as wanted and replace nans by zeros"""
     for arr in args:

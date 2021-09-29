@@ -141,6 +141,7 @@ nav:
       - Tutorial: tutorial.md
       - Formatting your data: modeformatting.md
       - On Casimir Polder interactions: casimirpolder.md
+      - Parallelizing your calculations: parallelizing.md
 
   - Reference:
       - Atomic system: reference/atomicsystem.md

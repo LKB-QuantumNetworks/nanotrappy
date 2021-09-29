@@ -130,8 +130,8 @@ class ParallelSimulator(Simulator):
             seq_sim = SequentialSimulator()
             seq_sim.simulate_pair(simulation, beam, E_fwd, E_bwd, potential_number, mf_shift)
         else:
-            alpha0_f, alpha1_f, alpha2_f = self.atomicsystem.set_alphas(beam.get_lmbda()[0])
-            alpha0_b, alpha1_b, alpha2_b = self.atomicsystem.set_alphas(beam.get_lmbda()[1])
+            alpha0_f, alpha1_f, alpha2_f = simulation.atomicsystem.set_alphas(beam.get_lmbda()[0])
+            alpha0_b, alpha1_b, alpha2_b = simulation.atomicsystem.set_alphas(beam.get_lmbda()[1])
 
             # dim1 = len(simulation.coord1)
             # dim2 = len(simulation.coord2)

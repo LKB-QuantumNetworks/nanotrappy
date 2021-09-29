@@ -150,7 +150,8 @@ class Nanofiber:
         if hasattr(self, "beta"):
             beta = self.beta
         else:
-            beta, _, _ = self.compute_beta(lmbda) * k00
+            beta, _, _ = self.compute_beta(lmbda)
+            beta = beta * k00
 
         ## Coordinates
         r = np.sqrt(x ** 2 + y ** 2)
@@ -223,5 +224,16 @@ class Nanofiber:
 
 
 if __name__ == "__main__":
-    nanof = Nanofiber(SiO2(), air())
-    print(nanof.compute_E_linear([0],[0],[0],780e-9,1e-3,0))
+    nanof = Nanofiber(SiO2(), air(), radius=250e-9)
+    wavelength = 937e-9
+    y = np.linspace(-800e-9, 800e-9, 201)
+    x = np.linspace(-800e-9, 800e-9, 201)
+    z = np.array([0])
+    P = 1  # in Watts
+    theta = 0  # radians
+    E = nanof.compute_E_linear(x, y, z, wavelength, P, theta)
+
+    Exy = np.linalg.norm(E[:, :, :, 0], axis=0)
+
+    plt.imshow(Exy)
+    plt.show()

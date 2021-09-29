@@ -53,8 +53,19 @@ class Surface:
         else:
             pass
 
+    def isPlaneSurface(self):
+        return True if self.__desc__ == "planesurface" else False
+
+    def isCylindricalSurface(self):
+        return True if self.__desc__ == "cylindricalsurface" else False
+
+    def isNoSurface(self):
+        return True if self.__desc__ == "nosurface" else False
+
 
 class PlaneSurface(Surface):
+    __desc__ = "planesurface"
+
     def __init__(self, normal_axis, normal_coord):
         self.normal_axis = normal_axis
         self.normal_coord = normal_coord
@@ -83,8 +94,25 @@ class PlaneSurface(Surface):
         )
         return d
 
+    def get_slab(self, axis_data, trap_data, simul, axis, manual_edge=None):
+        dot_product = np.dot(self.normal_axis.to_normal_vector(), axis)
+        if abs(dot_product) != 1:
+            return -1, trap_data
+        else:
+            axis_data = axis.fetch_in(simul)
+            idx = find_nearest(axis_data, self.normal_coord)
+            if np.abs(axis_data[idx] - self.normal_coord) > np.max(np.diff(axis_data)):  ## very ugly, but kept for now
+                return -1, trap_data
+            if dot_product == 1:
+                return axis_data[idx:], trap_data[idx:]
+            else:
+                return axis_data[: idx + 1], trap_data[: idx + 1]
+
 
 class CylindricalSurface(Surface):
+
+    __desc__ = "cylindricalsurface"
+
     def __init__(self, axis, radius):
         self.axis = axis
         self.radius = radius
@@ -103,8 +131,24 @@ class CylindricalSurface(Surface):
         d = r - self.radius
         return d
 
+    def get_slab(self, axis_data, trap_data, simul, axis, manual_edge=None):
+        ax1, ax2 = self.axis.normal_plane.get_base_axes()
+        if np.abs(np.dot(ax1.to_normal_vector(), axis.to_normal_vector())) == 1:
+            ax = ax1
+            center_coord = self.axis.coordinates[0]
+        elif np.abs(np.dot(ax2, axis)) == 1:
+            ax = ax2
+            center_coord = self.axis.coordinates[1]
+        else:
+            raise ValueError("Fatal Error")
+
+        idx = find_nearest(axis_data, center_coord + self.radius)
+        return axis_data[idx + 1 :], trap_data[idx + 1 :]
+
 
 class NoSurface(Surface):
+    __desc__ = "nosurface"
+
     def __init__(self):
         self.params = {"type": type(self).__name__}
         pass
@@ -112,8 +156,19 @@ class NoSurface(Surface):
     def distance(self, point):
         return 0
 
+    def get_slab(self, trap_data, simul, axis_data, manual_edge=None):
+        if manual_edge is None:
+            raise ValueError(
+                "No surface for CP interactions have been specified. To restrict the search for the minimum in the right zone, you have to specify an edge"
+            )
+        edge = manual_edge
+        index_edge = np.argmin(np.abs(axis_data - edge))
+        y_outside = axis_data[index_edge:] - edge
+        trap_outside = trap_data[index_edge:]
+
 
 if __name__ == "__main__":
     pl = PlaneSurface(normal_axis=AxisX(), normal_coord=0)
 
     print(pl.distance((11.2, 33.6, 4)))
+    print(pl.isCylindricalSurface())

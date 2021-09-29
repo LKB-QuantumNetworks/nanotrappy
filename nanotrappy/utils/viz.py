@@ -1,4 +1,6 @@
 from __future__ import annotations
+from copy import copy
+from nanotrappy.trapping.geometry import AxisX, AxisY, AxisZ
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import numpy as np
@@ -12,6 +14,8 @@ import itertools
 import mplcursors
 import time
 
+from nanotrappy.utils.utils import *
+from nanotrappy.utils.physicalunits import *
 
 _custom_highlight_kwargs = dict(
     # Only the kwargs corresponding to properties of the artist will be passed.
@@ -63,9 +67,19 @@ class Viz:
 
     def __init__(self, simul, trapping_axis):
         # Trapping_axis is the one perpendicular to the surface if one is defined
-        super().__init__()
         self.trapping_axis = trapping_axis
         self.simul = simul
+
+        ## Convenient process of str input, to match arxiv version. Will be removed
+        if isinstance(self.trapping_axis, str):
+            if self.trapping_axis == "X":
+                self.trapping_axis = AxisX()
+            elif self.trapping_axis == "Y":
+                self.trapping_axis = AxisY()
+            elif self.trapping_axis == "Z":
+                self.trapping_axis = AxisZ()
+            else:
+                raise ValueError("Non valid name for trapping axis. Choose between X, Y or Z.")
 
     def plot_trap(self, mf=0, Pranges=[10, 10], increments=[0.1, 0.1]):
         """Shows a 2D plot of the total potential with power sliders
@@ -90,8 +104,6 @@ class Viz:
                 - slider_ax: sliders (needed for interactivity of the sliders)
 
         """
-        if np.ndim(self.simul.total_potential()) <= 2:
-            raise TypeError("This method can only be used if a 2D computation of the potential has been done")
 
         if len(Pranges) != len(self.simul.trap.beams):
             raise ValueError(
@@ -133,7 +145,7 @@ class Viz:
             plt.setp(ax.spines.values(), linewidth=1.5)
             ax.tick_params(axis="both", which="major", labelsize=14)
             ax.set_title(
-                "2D plot of trapping potential \n for mf = %s in the %s plane" % (mf, self.simul.geometry.name),
+                "2D plot of trapping potential \n for mf = %s in the %s plane" % (mf, self.simul.geometry.name.upper()),
                 fontsize=18,
             )
 
@@ -292,14 +304,11 @@ class Viz:
         for slider in slider_ax:
             slider.on_changed(updateP)
 
-        # s1, s2 = np.transpose(trap).shape
-        # LnTr = LineSlice(a, s1, s2, coord1 / nm, coord2 / nm, ax2)
-
         plt.show()
 
         return fig, ax, slider_ax
 
-    def plot_3axis(self, coord1, coord2, mf=0, Pranges=[10, 10], increments=[0.1, 0.1]):
+    def plot_3axis(self, mf=0, Pranges=[10, 10], increments=[0.1, 0.1]):
         """Shows 3 1D plots of the total potential with power sliders,
         and trapping frequencies for each axis if possible.
         Starts by simulating a 1D trap along the trapping_axis attribute of
@@ -332,10 +341,12 @@ class Viz:
             raise ValueError("This 3D plot can only be done for one specific mf at a time")
 
         mf_shift = mf + self.simul.atomicsystem.f
-        axis_of_interest, axis1, axis2 = get_sorted_axis(self.trapping_axis, self.simul)
-        axis1_name, axis2_name = get_sorted_axis_name(self.trapping_axis)
-        axis_index, axis1_index, axis2_index = set_axis_index_from_axis(self.trapping_axis)
-        axis_name_list = [self.trapping_axis, axis1_name, axis2_name]
+
+        main_axis = self.trapping_axis
+        axis1, axis2 = self.trapping_axis.normal_plane.get_base_axes()
+
+        main_axis_data = main_axis.fetch_in(self.simul)
+        axis1_data, axis2_data = axis1.fetch_in(self.simul), axis2.fetch_in(self.simul)
 
         if len(self.simul.E[0].shape) != 4:
             print("[WARNING] 3D Electric fields must be fed in the Simulation class in order to use this function")
@@ -640,7 +651,7 @@ class Viz:
         trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.mass)) * (1 / (2 * np.pi))
         return trap_freq
 
-    def get_coord_trap_outside_structure(self, axis, coord1, coord2, mf=0, edge_no_surface=None):
+    def restrict_trap_from_surfaces(self, mf=0):
         """Returns the truncation of both the specified axis and the trap along that direction, setting 0 for the coordinate at the edge of the structure.
 
         Args:
@@ -665,49 +676,21 @@ class Viz:
         """
         _, mf = check_mf(self.simul.atomicsystem.f, mf)
         mf_index = int(mf + self.simul.atomicsystem.f)
-        coord = set_axis_from_axis(axis, self.simul)
-        trap = np.real(self.simul.compute_potential_1D(axis, coord1, coord2))[:, mf_index]
 
-        if axis != self.trapping_axis:
-            index_edge = 0
-            edge = 0
-            y_outside = coord
-            trap_outside = trap
-        elif axis == self.trapping_axis and type(self.simul.surface).__name__ == "NoSurface":
-            if edge_no_surface is None:
-                raise ValueError(
-                    "No surface for CP interactions have been specified. To restrict the search for the minimum in the right zone, you have to specify an edge"
-                )
-            edge = edge_no_surface
-            index_edge = np.argmin(np.abs(coord - edge))
-            y_outside = coord[index_edge:] - edge
-            trap_outside = trap[index_edge:]
-        else:
-            peaks = find_peaks(-self.simul.CP[:, mf_index], height=10)
-            if len(peaks[0]) == 0:
-                index_edge = 0
-                edge = 0
-                y_outside = coord
-                trap_outside = trap
-            elif len(peaks[0]) == 1:
-                index_edge = peaks[0][0]
-                edge = coord[index_edge - 1]
-                y_outside = coord[index_edge:] - edge
-                trap_outside = trap[index_edge:]
-            elif len(peaks[0]) == 2 and type(self.simul.surface[0]).__name__ == "Cylinder":
-                index_edge = peaks[0][-1]
-                edge = coord[index_edge + 1]
-                y_outside = coord[index_edge:] - edge
-                trap_outside = trap[index_edge:]
-            elif len(peaks[0]) == 2:
-                index_edge = peaks[0]
-                edge = coord[index_edge[0] - 1]
-                y_outside = coord[index_edge[0] : index_edge[1]] - edge
-                trap_outside = trap[index_edge[0] : index_edge[1]]
-            else:
-                raise ValueError("Too many structures set")
+        coord = self.trapping_axis.fetch_in(self.simul)
 
-        return mf_index, edge, y_outside, trap_outside
+        old_geometry = copy(self.simul.geometry)
+        self.simul.geometry = self.trapping_axis
+        trap = np.real(self.simul.compute())[0][:, mf_index]
+        print("Trap", len(trap))
+        self.simul.geometry = old_geometry
+
+        for surface in self.simul.surface:
+            coord, trap = surface.get_slab(coord, trap, self.simul, self.trapping_axis)
+
+        return coord, trap
+
+        # return mf_index, edge, y_outside, trap_outside
 
     def ellipticity_plot(self, projection_axis):
         if self.simul.dimension == "2D":
