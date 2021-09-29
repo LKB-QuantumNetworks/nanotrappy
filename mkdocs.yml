@@ -23,7 +23,7 @@ site_name: nanotrappy Documentation
 site_author: Jérémy Berroir & Adrien Bouscal
 # site_url: https://squidfunk.github.io/mkdocs-material/
 site_description: >-
-  Simulating atom trapping around nanostructures has never been easier. Easy to set up in 5 minutes.
+  A python package made for calculating optical trapping potentials for alkali atoms around nanostructures.
 
 # Repository
 repo_url: https://github.com/LKB-QuantumNetworks/nanotrappy
