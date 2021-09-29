@@ -19,7 +19,7 @@
     
     
       
-        <title>On Casimir-Polder interactions and surfaces implemented in nanotrappy - nanotrappy Documentation</title>
+        <title>Setting up a simulation - nanotrappy Documentation</title>
       
     
     
@@ -65,6 +65,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#parallelizing-your-calculations" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -90,7 +95,7 @@
           </span>
           <span class="md-header-nav__topic md-ellipsis">
             
-              On Casimir-Polder interactions and surfaces implemented in nanotrappy
+              Setting up a simulation
             
           </span>
         </div>
@@ -320,18 +325,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../casimirpolder/" class="md-nav__link">
       On Casimir Polder interactions
     </a>
-    
   </li>
 
         
@@ -339,11 +337,20 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../parallelizing/" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+    <a href="./" class="md-nav__link md-nav__link--active">
       Parallelizing your calculations
     </a>
+    
   </li>
 
         
@@ -481,21 +488,40 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
                 
-                  <h1>On Casimir Polder interactions</h1>
-                
-                <p>Van der Waals interactions (also called Casimir-Polder forces) tend to bring the atoms closer to the surface. They depend on the atom, its atomic level and on the material they are approaching.</p>
-<p>Their action is only on very short distances (usually on the order of 100nm) but when looking at atoms close to surface with high refractive index, they sometimes have to be taken into account.
-Our approach is to set surfaces that will be added to the simulation.
-For now only CylindricalSurfaces and PlaneSurfaces have been implemented but together they cover most of the waveguides of interest.</p>
-<p>Distance from these surfaces are computed and the CP potential is set to its first order approximation : U<sub>CP</sub> = - C<sub>3</sub>/d<sup>3</sup>.</p>
-<p>The C<sub>3</sub> coefficient depends on both atom and material of the structure. A routine in nanotrappy allows computation of C<sub>3</sub> for {atom, material} pairs that are not yet implemented.
-See the main text of the <a href="https://arxiv.org/">companion article</a> for more information.</p>
+                <h1 id="parallelizing-your-calculations">Parallelizing your calculations<a class="headerlink" href="#parallelizing-your-calculations" title="Permanent link">&para;</a></h1>
+<p>For precise simulations on big grids, the computation can take a few minutes, especially if designs with counterpropagating beams are used.
+In order to speed up the optimisation process, we implemented a native way for dispatching the computation on various cores of the processor.
+This is done thanks to the <code>ParallelSimulator</code> class, which takes advantage of the Python <code>multiprocessing</code> package.</p>
+<p>After setting the simulation and before running <code>Simul.compute</code>, you can set up a <code>ParallelSimulator</code> that will handle the parallelization of the computation:</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>   <span class="n">Simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">syst</span><span class="p">,</span> <span class="n">SiO2</span><span class="p">(),</span> <span class="n">trap</span><span class="p">,</span> <span class="n">datafolder</span><span class="p">,</span><span class="n">surface</span><span class="p">)</span>
+   <span class="n">Simul</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">ParallelSimulator</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<p><code>max_workers</code> specify the number of maximum cores that will be used for the simulation. When set to None, all the possible cores will be used.
+By default an object <code>SequentialSimulator</code> is created, avoiding any issue that could arise when using <code>multiprocessing</code>.</p>
+<p>On Linux, the htop command allows to see the usage of the microprocessor cores.</p>
                 
                   
                 

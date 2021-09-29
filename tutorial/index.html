@@ -334,8 +334,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#use-the-pre-implemented-nanofiber-field-calculations" class="md-nav__link">
-    Use the pre-implemented nanofiber field calculations
+  <a href="#specifying-the-atom-we-want-to-trap" class="md-nav__link">
+    Specifying the atom we want to trap
   </a>
   
 </li>
@@ -345,14 +345,7 @@
     Creating the beams and trapping scheme
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#specifying-the-atom-we-want-to-trap" class="md-nav__link">
-    Specifying the atom we want to trap
-  </a>
-  
-    <nav class="md-nav" aria-label="Specifying the atom we want to trap">
+    <nav class="md-nav" aria-label="Creating the beams and trapping scheme">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -415,6 +408,18 @@
   <li class="md-nav__item">
     <a href="../casimirpolder/" class="md-nav__link">
       On Casimir Polder interactions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../parallelizing/" class="md-nav__link">
+      Parallelizing your calculations
     </a>
   </li>
 
@@ -570,8 +575,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#use-the-pre-implemented-nanofiber-field-calculations" class="md-nav__link">
-    Use the pre-implemented nanofiber field calculations
+  <a href="#specifying-the-atom-we-want-to-trap" class="md-nav__link">
+    Specifying the atom we want to trap
   </a>
   
 </li>
@@ -581,14 +586,7 @@
     Creating the beams and trapping scheme
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#specifying-the-atom-we-want-to-trap" class="md-nav__link">
-    Specifying the atom we want to trap
-  </a>
-  
-    <nav class="md-nav" aria-label="Specifying the atom we want to trap">
+    <nav class="md-nav" aria-label="Creating the beams and trapping scheme">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -641,86 +639,95 @@
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">nanotrappy</span>
-<span class="kn">import</span> <span class="nn">nanotrappy.trapping.atomicsystem</span> <span class="k">as</span> <span class="nn">Na</span>
-<span class="kn">import</span> <span class="nn">nanotrappy.trapping.beam</span> <span class="k">as</span> <span class="nn">Nb</span>
-<span class="kn">import</span> <span class="nn">nanotrappy.trapping.trap</span> <span class="k">as</span> <span class="nn">Nt</span>
-<span class="kn">import</span> <span class="nn">nanotrappy.trapping.simulation</span> <span class="k">as</span> <span class="nn">Ns</span>
-<span class="kn">import</span> <span class="nn">nanotrappy.utils.materials</span> <span class="k">as</span> <span class="nn">Nm</span>
-<span class="kn">import</span> <span class="nn">nanotrappy.utils.viz</span> <span class="k">as</span> <span class="nn">Nv</span>
-<span class="kn">import</span> <span class="nn">nanotrappy.utils.vdw</span> <span class="k">as</span> <span class="nn">vdw</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">nanotrappy</span> <span class="k">as</span> <span class="nn">nt</span>
 <span class="kn">from</span> <span class="nn">nanotrappy.utils.physicalunits</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 </code></pre></div>
 </td></tr></table>
-<p>In this tutorial we will reproduce the trapping schemes around a nanofiber discussed in Lacroûte et al. "A state-insensitive, compensated nanofiber trap" New J. Phys. 14 (2012).</p>
-<h2 id="use-the-pre-implemented-nanofiber-field-calculations">Use the pre-implemented nanofiber field calculations<a class="headerlink" href="#use-the-pre-implemented-nanofiber-field-calculations" title="Permanent link">&para;</a></h2>
+<p>In this tutorial we will reproduce the trapping schemes around a nanofiber discussed in Lacroûte et al. "<a href="https://doi.org/10.1088/1367-2630/14/2/023056">A state-insensitive, compensated nanofiber trap</a>" New J. Phys. 14 (2012).</p>
+<h2 id="specifying-the-atom-we-want-to-trap">Specifying the atom we want to trap<a class="headerlink" href="#specifying-the-atom-we-want-to-trap" title="Permanent link">&para;</a></h2>
+<p>First we have to specify for which atom the trapping potentials will be computed.
+This part is based on the <a href="https://arc-alkali-rydberg-calculator.readthedocs.io/en/latest/">Alkali Rydberg Calculator</a> library.
+Originally conceived for studying Rydberg atoms, we have included the hyperfine levels of such Alkali atoms.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">5</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">syst</span> <span class="o">=</span> <span class="n">Na</span><span class="o">.</span><span class="n">atomicsystem</span><span class="p">(</span><span class="n">Caesium</span><span class="p">(),</span> <span class="s2">&quot;6S1/2&quot;</span><span class="p">,</span><span class="n">f</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<p>An alkali atom has to be chosen, an atomic level from the fine structure (here the ground state of Cesium 6S&frac12;) and the F of the hyperfine level studied.
+Indeed the dipole force felt by the atoms depends on the hyperfine level they are in.
+Note that the state can be written as a string.</p>
 <h2 id="creating-the-beams-and-trapping-scheme">Creating the beams and trapping scheme<a class="headerlink" href="#creating-the-beams-and-trapping-scheme" title="Permanent link">&para;</a></h2>
 <p>There are many different designs that can be used for trapping atoms with evanescent fields.
 We have then to specify how many beams we want to use, at which wavelengths and powers.</p>
 <p>If the structures are pre-implemented in <code>nanotrappy</code>, the right modes will then be computed.
 If not, a folder containing the modes will have to be specified, consult the <a href="../modeformatting/">mode formatting</a> section to see how the modes have to be saved in order to be used by <code>nanotrappy</code>.</p>
 <p>Beam objects are the basic building blocks of your trap in <code>nanotrappy</code>.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">blue_beam</span> <span class="o">=</span> <span class="n">Nb</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span><span class="mf">1064e-9</span><span class="p">,</span><span class="s2">&quot;f&quot;</span><span class="p">,</span><span class="mi">25</span><span class="o">*</span><span class="n">mW</span><span class="p">)</span>
-<span class="n">red_beam</span> <span class="o">=</span> <span class="n">Nb</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span><span class="mf">780e-9</span><span class="p">,</span><span class="s2">&quot;f&quot;</span><span class="p">,</span><span class="mi">7</span><span class="o">*</span><span class="n">mW</span><span class="p">)</span>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">blue_beam</span> <span class="o">=</span> <span class="n">nt</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span><span class="mf">1064e-9</span><span class="p">,</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;f&quot;</span><span class="p">,</span> <span class="n">power</span> <span class="o">=</span> <span class="mi">25</span><span class="o">*</span><span class="n">mW</span><span class="p">)</span>
+<span class="n">red_beam</span> <span class="o">=</span> <span class="n">nt</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span><span class="mf">780e-9</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;f&quot;</span><span class="p">,</span> <span class="n">power</span> <span class="o">=</span> <span class="mi">7</span><span class="o">*</span><span class="n">mW</span><span class="p">)</span>
 </code></pre></div>
 </td></tr></table>
 <p>Here we define two beams, blue- and red-detuned from the Cesium D2 line respectively.
-"f" means the beam is propagating forward, along the propagation axis of the waveguide that will be specified later. "b" stands for backwards.
+"f" means the beam is propagating forward, along the propagation axis of the waveguide. "b" stands for backwards.
 This is important as chiral effects can arise when coupling tightly focused light to quantum emitters for example.</p>
-<p>These beams are bundled into a trap object, where a propagation axis is specified.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">trap</span> <span class="o">=</span> <span class="n">Nt</span><span class="o">.</span><span class="n">Trap_beams</span><span class="p">(</span><span class="n">blue_beam</span><span class="p">,</span><span class="n">red_beam</span><span class="p">,</span><span class="n">propagation_axis</span><span class="o">=</span><span class="s2">&quot;Z&quot;</span><span class="p">)</span>
+<p>Similarly, if your trap consists of a red standing wave and a blue slightly detuned running wave as in <a href="https://doi.org/10.1088/1367-2630/14/2/023056">1</a>,</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">red_beam</span> <span class="o">=</span> <span class="n">nt</span><span class="o">.</span><span class="n">BeamPair</span><span class="p">(</span><span class="mf">937e-9</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">mW</span><span class="p">,</span> <span class="mf">937e-9</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">mW</span><span class="p">)</span> <span class="c1">#Standing wave</span>
+<span class="n">blue_beam</span> <span class="o">=</span> <span class="n">nt</span><span class="o">.</span><span class="n">BeamPair</span><span class="p">(</span><span class="mf">685.5e-9</span><span class="p">,</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">mW</span><span class="p">,</span> <span class="mf">685.6e-9</span><span class="p">,</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">mW</span><span class="p">)</span> <span class="c1">#Running wave for cancellation of the vector shift</span>
 </code></pre></div>
 </td></tr></table>
-<h2 id="specifying-the-atom-we-want-to-trap">Specifying the atom we want to trap<a class="headerlink" href="#specifying-the-atom-we-want-to-trap" title="Permanent link">&para;</a></h2>
-<p>This part is based on the <a href="https://arc-alkali-rydberg-calculator.readthedocs.io/en/latest/">Alkali Rydberg Calculator</a> library. Originally conceived for studying Rydberg atoms, we have included the hyperfine levels of such Alkali.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">5</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">syst</span> <span class="o">=</span> <span class="n">Na</span><span class="o">.</span><span class="n">atomicsystem</span><span class="p">(</span><span class="n">Caesium</span><span class="p">(),</span> <span class="n">Na</span><span class="o">.</span><span class="n">atomiclevel</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="n">S</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="n">f</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<p>These beams are bundled into a trap object that will then be used in the simulation.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">7</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">trap</span> <span class="o">=</span> <span class="n">nt</span><span class="o">.</span><span class="n">Trap_beams</span><span class="p">(</span><span class="n">blue_beam</span><span class="p">,</span><span class="n">red_beam</span><span class="p">)</span>
 </code></pre></div>
 </td></tr></table>
-<p>An alkali atom has to be chosen, an atomic level from the fine structure (here the ground state of Cesium 6S&frac12;) and the F of the hyperfine level studied.
-Indeed the dipole force felt by the atoms depends on the hyperfine level they are in.</p>
 <h3 id="optional-set-surfaces-for-the-van-der-waals-interactions">Optional : Set surfaces for the Van der Waals interactions<a class="headerlink" href="#optional-set-surfaces-for-the-van-der-waals-interactions" title="Permanent link">&para;</a></h3>
-<p>See <a href="../casimirpolder/">the dedicated page</a> for more information. The nanofiber is a cylinder with axis of symmetry the propagation axis.
+<p>See <a href="../casimirpolder/">the dedicated page</a> for more information. The nanofiber is a cylinder with axis of symmetry the propagation axis Z.
 We define then a cylinder centered at the origin of the grid, with 250 nm radius and with "Z" revolution axis.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">surface</span> <span class="o">=</span> <span class="n">vdw</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="mf">250e-9</span><span class="p">,</span><span class="s2">&quot;Z&quot;</span><span class="p">)</span>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">9</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">surface</span> <span class="o">=</span> <span class="n">nt</span><span class="o">.</span><span class="n">CylindricalSurface</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">250e-9</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="n">AxisZ</span><span class="p">(</span><span class="n">coordinates</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)))</span>
 </code></pre></div>
 </td></tr></table>
 <h2 id="define-the-simulation-object">Define the Simulation object<a class="headerlink" href="#define-the-simulation-object" title="Permanent link">&para;</a></h2>
 <p>The simulation object will then be a bundle of everything needed to compute the trapping potentials.
 The right modes corresponding to the trapping scheme, the atomic level and the surface and material (for CP interactions).
 This class will be useful mostly for keeping the results of the simulation and visualisation purposes further on.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">7</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">Simul</span> <span class="o">=</span> <span class="n">Ns</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">syst</span><span class="p">,</span><span class="n">Nm</span><span class="o">.</span><span class="n">SiO2</span><span class="p">(),</span><span class="n">trap</span><span class="p">,</span><span class="n">datafolder</span><span class="p">,</span><span class="n">surface</span><span class="p">)</span>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">Simul</span> <span class="o">=</span> <span class="n">nt</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">syst</span><span class="p">,</span><span class="n">SiO2</span><span class="p">(),</span><span class="n">trap</span><span class="p">,</span><span class="n">datafolder</span><span class="p">,</span><span class="n">surface</span><span class="p">)</span>
+<span class="n">Simul</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">PlaneXY</span><span class="p">(</span><span class="n">normal_coord</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </code></pre></div>
 </td></tr></table>
+<p>We also defined a simulation geometry, meaning on which plane or along which axis we want to run the computation for future observation.</p>
 <h2 id="run-the-simulation-in-2-dimensions">Run the simulation in 2 dimensions<a class="headerlink" href="#run-the-simulation-in-2-dimensions" title="Permanent link">&para;</a></h2>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">8</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">trap2D</span> <span class="o">=</span> <span class="n">Simul</span><span class="o">.</span><span class="n">compute_potential</span><span class="p">(</span><span class="s2">&quot;XY&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">9</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">trap2D</span> <span class="o">=</span> <span class="n">Simul</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 </code></pre></div>
 </td></tr></table>
-<p>Careful that the simulation in 2D can be time consuming as the potential is computed point by point on the given grid.
-As an example, for a 100x100 grid, times of the order of 30s are expected.</p>
+<p><code>compute</code> then takes no argument as everything has been defined earlier.
+Careful that the simulation in 2D can be time consuming as the potential is computed point by point on the given grid.
+As an example, for a 100x100 grid, times of the order of 30s are expected. See the <a href="../parallelizing/">parallelizing</a> section for more information on speeding up your calculation.</p>
 <h2 id="visualizing-the-results">Visualizing the results<a class="headerlink" href="#visualizing-the-results" title="Permanent link">&para;</a></h2>
 <p>The <a href="../reference/viz/">viz</a> submodules has a few methods to visualise and analyze your results.
-The easiest is to plot the 2D potential with power sliders as follows :</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">9</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">slider_ax</span> <span class="o">=</span> <span class="n">Nv</span><span class="o">.</span><span class="n">plot_trap</span><span class="p">(</span><span class="n">Simul</span><span class="p">,</span><span class="s2">&quot;XY&quot;</span><span class="p">)</span>
+You have first to create a Vizualizer object to access these methods. The trapping axis corresponds to the axis that is going away from the main surfaces.
+For the nanofiber it can be either X or Y, depending on your experimental parameters.</p>
+<p>The easiest is to plot the 2D potential with power sliders as follows :</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">viz</span> <span class="o">=</span> <span class="n">Viz</span><span class="p">(</span><span class="n">Simul</span><span class="p">,</span> <span class="n">trapping_axis</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">slider_ax</span> <span class="o">=</span> <span class="n">viz</span><span class="o">.</span><span class="n">plot_trap</span><span class="p">(</span><span class="n">mf</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">Pranges</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">increments</span><span class="o">=</span><span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">])</span>
 </code></pre></div>
 </td></tr></table>
-<p>It is important to return the image and sliders as this will ensure the sliders do not get stuck.</p>
+<p>Pranges and increments are in mW.
+It is important to return the image and sliders as this will ensure the sliders do not get stuck.</p>
 <p><a href="../images/nanofiber_plot.png"><img alt="Nanofiber plot" src="../images/nanofiber_plot.png" style="height:600px;width:600px" /></a></p>
-<p>We see here 2 trapping sites, one on each side of the fiber (around 230 nm from the surface each).
-We can also look at a cut in 1D for easier analysis.</p>
+<p>We see here 2 trapping sites, one on each side of the fiber (around 230 nm from the surface each).</p>
 <p>If you are satisfied, you can save your simulation with <code>Simul.save()</code>.
-This will create a new folder in your mode folder and save a JSON file with the list of parameters of the simulation as well as a NPY with the potentials (not summed).</p>
-<p>When you run a simulation <code>nanotrappy</code> looks in the results folder if a simulation with the same parameters has been already saved. If so, it just opens it without running the simulation again.</p>
-<p>A 1D simulation can also be run to look at how the different mf states are affected by the differential vector shift coming from the local circular polarisation of the light acting as a fictitious magnetic field.</p>
+This will create a new folder in your mode folder and save a JSON file with the list of parameters of the simulation as well as a NPY with the potentials (not summed) and the eigenvectors in the m<sub>f</sub> basis.</p>
+<p>When you run a simulation, <code>nanotrappy</code> looks in the results folder if a simulation with the same parameters has already been saved. If so, it just reloads it without running it again.</p>
+<p>A 1D simulation can also be run to look at how the different m<sub>f</sub> states are affected by the differential vector shift coming from the local circular polarisation of the light acting as a fictitious magnetic field.
+To do so, you just have to modifiy the <code>geometry</code> of the simulation and run the computation again:</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">trap1D</span> <span class="o">=</span> <span class="n">Simul</span><span class="o">.</span><span class="n">compute_potential_1D</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">slider_ax</span> <span class="o">=</span> <span class="n">Nv</span><span class="o">.</span><span class="n">plot_trap1D</span><span class="p">(</span><span class="n">Simul</span><span class="p">,</span><span class="s2">&quot;X&quot;</span><span class="p">,[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">Simul</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">AxisX</span><span class="p">(</span><span class="n">coordinates</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+<span class="n">trap1D</span> <span class="o">=</span> <span class="n">Simul</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">slider_ax</span> <span class="o">=</span> <span class="n">Nv</span><span class="o">.</span><span class="n">plot_trap</span><span class="p">(</span><span class="n">mf</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="n">Pranges</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">increments</span><span class="o">=</span><span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">])</span>
 <span class="n">Simul</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 </code></pre></div>
 </td></tr></table>
