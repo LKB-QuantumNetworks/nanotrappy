@@ -1,6 +1,6 @@
 # nanotrappy
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://jrmbr.github.io/nanotrappy)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://lkb-quantumnetworks.github.io/nanotrappy)
 [![Generic badge](https://img.shields.io/badge/python-3.7|3.8|3.9-blue.svg)](https://www.python.org/downloads/release)
 
 A Python package to compute dipolar trapping potential around arbitrary nanostructures.
