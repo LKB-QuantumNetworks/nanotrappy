@@ -157,7 +157,7 @@ class ParallelSimulator(Simulator):
             output = ((i, j) for i, j in itertools.product(range(dim2), repeat=2) if i < dim1)
 
             results = process_map(
-                simulation.parallel_beam_pair_potential,
+                self.parallel_beam_pair_potential,
                 list(input),
                 max_workers=self.max_workers,
                 chunksize=int(dim1 * dim2 / 100.0),
