@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     surface = CylindricalSurface(axis=AxisZ(), radius=250e-9)
     Simul = Simulation(syst, SiO2(), trap, datafolder, surface)
-    Simul.simulator = ParallelSimulator(max_workers=None)
+    # Simul.simulator = ParallelSimulator(max_workers=None)
     Simul.geometry = PlaneXY(normal_coord=0)
     # Simul.geometry = AxisX(coordinates=(0, 0))
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     viz = Viz(Simul, trapping_axis="Y")
     #fig, ax, slider_ax = viz.plot_trap(mf=range(-f4, f4 + 1), Pranges=[30, 10], increments=[0.1, 0.1])
-    fig, ax, slider_ax = viz.plot_trap(mf=0, Pranges=[10, 2], increments=[0.01, 0.01])
+    fig, ax, slider_ax = viz.plot_trap(mf=0, Pranges=[30, 10], increments=[0.01, 0.01])
     # plt.show()
 
     # e = viz.get_coord_trap_outside_structure()
