@@ -214,7 +214,7 @@ class Nanofiber:
 
     def compute_E_linear(self, x, y, z, lmbda, P, theta):
         # P is given in Watts
-
+        beta = self.compute_beta(lmbda)
         E = np.zeros((3, len(x), len(y), len(z)), dtype="complex")
         for k in range(len(x)):
             for i in range(len(y)):
