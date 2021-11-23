@@ -15,10 +15,10 @@ class Geometry:
         return self.dimension
 
     def isAxis(self):
-        return True if self.dimension == 1 else False
+        return self.dimension == 1
 
     def isPlane(self):
-        return True if self.dimension == 2 else False
+        return self.dimension == 2
 
 
 ################################################################################################################
@@ -81,6 +81,9 @@ class AxisX(Axis):
     def to_slice(self, index_coord_1, index_coord_2):
         return np.s_[:, :, index_coord_1, index_coord_2]
 
+    def complete_orthogonal_basis(self, position=0):
+        return AxisY(coordinates=(position, self.coordinates[1])), AxisZ(coordinates=(position, self.coordinates[0]))
+
 
 class AxisY(Axis):
     def __init__(self, coordinates=(0, 0)):
@@ -94,6 +97,9 @@ class AxisY(Axis):
     def to_slice(self, index_coord_1, index_coord_2):
         return np.s_[:, index_coord_1, :, index_coord_2]
 
+    def complete_orthogonal_basis(self, position=0):
+        return AxisX(coordinates=(position, self.coordinates[1])), AxisZ(coordinates=(self.coordinates[0], position))
+
 
 class AxisZ(Axis):
     def __init__(self, coordinates=(0, 0)):
@@ -106,6 +112,9 @@ class AxisZ(Axis):
 
     def to_slice(self, index_coord_1, index_coord_2):
         return np.s_[:, index_coord_1, index_coord_2, :]
+
+    def complete_orthogonal_basis(self, position=0):
+        return AxisX(coordinates=(self.coordinates[1], position)), AxisY(coordinates=(self.coordinates[0], position))
 
 
 ################################################################################################################
@@ -132,7 +141,8 @@ class PlaneXY(Plane):
         super().__init__(name="xy", normal_axis=AxisZ(), normal_coord=normal_coord)
 
     def get_base_axes(self):
-        return AxisX(), AxisY()
+        # return AxisX(), AxisY()
+        return AxisX(coordinates=(0, self.normal_coord)), AxisY(coordinates=(0, self.normal_coord))
 
 
 class PlaneYZ(Plane):
@@ -140,7 +150,8 @@ class PlaneYZ(Plane):
         super().__init__(name="yz", normal_axis=AxisX(), normal_coord=normal_coord)
 
     def get_base_axes(self):
-        return AxisY(), AxisZ()
+        # return AxisY(), AxisZ()
+        return AxisY(coordinates=(self.normal_coord, 0)), AxisZ(coordinates=(self.normal_coord, 0))
 
 
 class PlaneXZ(Plane):
@@ -148,7 +159,7 @@ class PlaneXZ(Plane):
         super().__init__(name="xz", normal_axis=AxisY(), normal_coord=normal_coord)
 
     def get_base_axes(self):
-        return AxisX(), AxisZ()
+        return AxisX(coordinates=(self.normal_coord, 0)), AxisZ(coordinates=(0, self.normal_coord))
 
 
 ################################################################################################################
@@ -228,35 +239,41 @@ class SimulTest:
         return np.ndim(self.E[0]) - 1
 
 
+# if __name__ == "__main__":
+#     ax1 = AxisY(coordinates=(2, 4))
+#     pl1 = PlaneYZ()
+
+#     print((-ax1).to_normal_vector())
+
+#     s = SimulTest()
+
+#     print(ax1.fetch_in(s))
+
+#     el = FieldGeometryProcessor.restrict(s, pl1)
+
+#     print(el[0].shape[1:])
+
+#     size = el[0].shape[1:]
+#     aa = np.random.rand(*(5, *size, 7))
+#     print(aa.shape)
+
+#     import itertools
+
+#     # ranges = [progressbar(range(0, 5), "\n Computing: ", 40), range(3, 7)]
+#     # for xs in itertools.product(*ranges):
+#     #     print(aa[(0, *xs)])
+
+#     ranges = [range(s) for s in size]
+#     ranges[0] = progressbar(ranges[0], "\n Computing: ", 40)
+#     rt = itertools.product(*ranges)
+#     print(rt)
+#     import time
+
+#     # for idx in itertools.product(*ranges):
+#     #     time.sleep(2)
+
 if __name__ == "__main__":
-    ax1 = AxisY(coordinates=(2, 4))
-    pl1 = PlaneYZ()
-
-    print((-ax1).to_normal_vector())
-
-    s = SimulTest()
-
-    print(ax1.fetch_in(s))
-
-    el = FieldGeometryProcessor.restrict(s, pl1)
-
-    print(el[0].shape[1:])
-
-    size = el[0].shape[1:]
-    aa = np.random.rand(*(5, *size, 7))
-    print(aa.shape)
-
-    import itertools
-
-    # ranges = [progressbar(range(0, 5), "\n Computing: ", 40), range(3, 7)]
-    # for xs in itertools.product(*ranges):
-    #     print(aa[(0, *xs)])
-
-    ranges = [range(s) for s in size]
-    ranges[0] = progressbar(ranges[0], "\n Computing: ", 40)
-    rt = itertools.product(*ranges)
-    print(rt)
-    import time
-
-    # for idx in itertools.product(*ranges):
-    #     time.sleep(2)
+    ax = AxisX(coordinates=(0, 0))
+    ax1, ax2 = ax.complete_orthogonal_basis(position=10)
+    print(ax1.name, ax1.coordinates)
+    print(ax2.name, ax2.coordinates)

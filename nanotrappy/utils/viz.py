@@ -340,20 +340,20 @@ class Viz:
         coord_main = self.trapping_axis.fetch_in(self.simul)
         trap_main = np.real(self.simul.compute())[0][:, mf_index]
 
-        self.simul.geometry = self.trapping_axis.normal_plane.get_base_axes()[0]
-        coord_1 = self.simul.geometry.fetch_in(self.simul)
-        trap_1 = np.real(self.simul.compute())[0][:, mf_index]
+        # self.simul.geometry = self.trapping_axis.normal_plane.get_base_axes()[0]
+        # coord_1 = self.simul.geometry.fetch_in(self.simul)
+        # trap_1 = np.real(self.simul.compute())[0][:, mf_index]
 
-        self.simul.geometry = self.trapping_axis.normal_plane.get_base_axes()[1]
-        coord_2 = self.simul.geometry.fetch_in(self.simul)
-        trap_2 = np.real(self.simul.compute())[0][:, mf_index]
+        # self.simul.geometry = self.trapping_axis.normal_plane.get_base_axes()[1]
+        # coord_2 = self.simul.geometry.fetch_in(self.simul)
+        # trap_2 = np.real(self.simul.compute())[0][:, mf_index]
 
         self.simul.geometry = old_geometry
 
         for surface in self.simul.surface:
             coord_main, trap_main = surface.get_slab(coord_main, trap_main, self.simul, self.trapping_axis)
 
-        return coord_main, trap_main, coord_1, trap_1, coord_2, trap_2
+        return coord_main, trap_main  # , coord_1, trap_1, coord_2, trap_2
 
         # return mf_index, edge, y_outside, trap_outside
 
@@ -385,6 +385,7 @@ class Viz:
                 - slider_ax: sliders (needed for interactivity of the sliders)
         """
         _, mf = check_mf(self.simul.atomicsystem.f, mf)
+        mf_index = int(mf + self.simul.atomicsystem.f)
 
         if len(mf) > 1:
             raise ValueError("This 3D plot can only be done for one specific mf at a time")
@@ -401,23 +402,39 @@ class Viz:
         if len(self.simul.E[0].shape) != 4:
             print("[WARNING] 3D Electric fields must be fed in the Simulation class in order to use this function")
         else:
-            y_out_main, trap_out_main, y_out_1, trap_out_1, y_out_2, trap_out_2 = self.restrict_trap_from_surfaces(
-                mf=mf
-            )
+            # y_out_main, trap_out_main, y_out_1, trap_out_1, y_out_2, trap_out_2 = self.restrict_trap_from_surfaces(
+            #     mf=mf
+            # )
+            y_out_main, trap_out_main = self.restrict_trap_from_surfaces(mf=mf)
             ymin_ind, y_min, trap_depth, trap_prominence, _ = self.get_min_trap(y_out_main, trap_out_main)
 
             omega_1, omega_main, omega_2 = 0, 0, 0
             if not np.isnan(y_min):
-                min_pos = np.zeros(3)
-                min_pos[main_axis.index] = y_min  # + edge
-                min_pos[axis1.index] = main_axis.coordinates[0]
-                min_pos[axis2.index] = main_axis.coordinates[1]
+                # min_pos = np.zeros(3)
+                # min_pos[main_axis.index] = y_min  # + edge
+                # min_pos[axis1.index] = main_axis.coordinates[0]
+                # min_pos[axis2.index] = main_axis.coordinates[1]
+
+                ax1, ax2 = self.trapping_axis.complete_orthogonal_basis(position=y_min)
+                old_geometry = copy(self.simul.geometry)
+
+                self.simul.geometry = ax1
+                y_out_1 = self.simul.geometry.fetch_in(self.simul)
+                trap_out_1 = np.real(self.simul.compute())[0][:, mf_index]
+                omega_1 = self.get_trapfreq(y_out_1, trap_out_1)
+
+                self.simul.geometry = ax2
+                y_out_2 = self.simul.geometry.fetch_in(self.simul)
+                trap_out_2 = np.real(self.simul.compute())[0][:, mf_index]
+                omega_2 = self.get_trapfreq(y_out_2, trap_out_2)
+
+                self.simul.geometry = old_geometry
 
                 omega_main = self.get_trapfreq(y_out_main, trap_out_main)
 
-                omega_1 = self.get_trapfreq(y_out_1, trap_out_1)
+                # omega_1 = self.get_trapfreq(y_out_1, trap_out_1)
 
-                omega_2 = self.get_trapfreq(y_out_2, trap_out_2)
+                # omega_2 = self.get_trapfreq(y_out_2, trap_out_2)
 
             fig, ax = plt.subplots(3, figsize=(15, 10))
             plt.subplots_adjust(left=0.25)
@@ -430,7 +447,7 @@ class Viz:
                     r"$\mathrm{depth}=%.2f (mK) $" % (trap_depth,),
                     r"$\omega_%s =%.2f (kHz) $"
                     % (
-                        self.trapping_axis,
+                        self.trapping_axis.name,
                         omega_main * 1e-3,
                     ),
                     r"$\omega_%s =%.2f (kHz) $"
@@ -494,27 +511,29 @@ class Viz:
             fig.text(0.21, 0.5, "Potential (mK)", ha="center", va="center", rotation="vertical", fontsize=14)
 
             def updateP(val):
-                P = []
-                for (k, slider) in enumerate(slider_ax):
-                    P.append(slider.val * mW)
+                P = [slider.val * mW for (k, slider) in enumerate(slider_ax)]
                 self.simul.trap.set_powers(P)
-                y_out_main, trap_out_main, y_out_1, trap_out_1, y_out_2, trap_out_2 = self.restrict_trap_from_surfaces(
-                    mf=mf
-                )
+                y_out_main, trap_out_main = self.restrict_trap_from_surfaces(mf=mf)
                 ymin_ind, y_min, trap_depth, trap_prominence, _ = self.get_min_trap(y_out_main, trap_out_main)
 
                 omega_1, omega_main, omega_2 = 0, 0, 0
                 if not np.isnan(y_min):
-                    min_pos = np.zeros(3)
-                    min_pos[main_axis.index] = y_min  # + edge
-                    min_pos[axis1.index] = main_axis.coordinates[0]
-                    min_pos[axis2.index] = main_axis.coordinates[1]
+                    ax1, ax2 = self.trapping_axis.complete_orthogonal_basis(position=y_min)
+                    old_geometry = copy(self.simul.geometry)
 
-                    omega_main = self.get_trapfreq(y_out_main, trap_out_main)
-
+                    self.simul.geometry = ax1
+                    y_out_1 = self.simul.geometry.fetch_in(self.simul)
+                    trap_out_1 = np.real(self.simul.compute())[0][:, mf_index]
                     omega_1 = self.get_trapfreq(y_out_1, trap_out_1)
 
+                    self.simul.geometry = ax2
+                    y_out_2 = self.simul.geometry.fetch_in(self.simul)
+                    trap_out_2 = np.real(self.simul.compute())[0][:, mf_index]
                     omega_2 = self.get_trapfreq(y_out_2, trap_out_2)
+
+                    self.simul.geometry = old_geometry
+
+                    omega_main = self.get_trapfreq(y_out_main, trap_out_main)
 
                     lx.set_ydata(trap_out_1)
                     lz.set_ydata(trap_out_2)
@@ -548,11 +567,10 @@ class Viz:
                         )
                     )
 
-                    box.set_text(textstr)
                 else:
                     textstr = r"$\mathrm{depth}=%.2f (mK) $" % (trap_depth,)
 
-                    box.set_text(textstr)
+                box.set_text(textstr)
                 ly.set_ydata(np.squeeze(np.real(trap_out_main)))
 
             for slider in slider_ax:
