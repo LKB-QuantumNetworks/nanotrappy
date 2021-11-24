@@ -551,7 +551,7 @@ class Viz:
                             r"$\mathrm{depth}=%.2f (mK) $" % (trap_depth,),
                             r"$\omega_%s =%.2f (kHz) $"
                             % (
-                                self.trapping_axis,
+                                self.trapping_axis.name,
                                 omega_main * 1e-3,
                             ),
                             r"$\omega_%s =%.2f (kHz) $"

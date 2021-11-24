@@ -156,15 +156,18 @@ class NoSurface(Surface):
     def distance(self, point):
         return 0
 
-    def get_slab(self, trap_data, simul, axis_data, manual_edge=None):
+    def get_slab(self, axis_data, trap_data, simul, axis, manual_edge=None):
         if manual_edge is None:
-            raise ValueError(
-                "No surface for CP interactions have been specified. To restrict the search for the minimum in the right zone, you have to specify an edge"
-            )
+            manual_edge = min(axis_data)
+            # raise ValueError(
+            #     "No surface for CP interactions have been specified. To restrict the search for the minimum in the right zone, you have to specify an edge"
+            # )
         edge = manual_edge
         index_edge = np.argmin(np.abs(axis_data - edge))
+        
         y_outside = axis_data[index_edge:] - edge
         trap_outside = trap_data[index_edge:]
+        return y_outside, trap_outside
 
 
 if __name__ == "__main__":
