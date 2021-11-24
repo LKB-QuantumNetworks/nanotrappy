@@ -111,8 +111,13 @@ class Simulation:
         self.wavelengths_indices = np.array([], dtype=int)
         for elem in self.trap.lmbdas:
             idx = np.where(np.isclose(self.lmbdas_modes, elem, atol=1e-11))
-            if len(idx[0]) != 0:
+            if len(idx[0]) == 1:
                 self.wavelengths_indices = np.append(self.wavelengths_indices, idx)
+            elif len(idx[0]) >= 2:  
+                print("Various fileswith corresponding wavelengths found in data folder, the possible filenames are the following: ",
+                np.array([f for f in os.listdir(self.data_folder) if f.endswith(".npy")])[idx])
+                idx_chosen =int(input("Please choose filenumber you want to use (has to be integer) : "))
+                self.wavelengths_indices = np.append(self.wavelengths_indices, idx_chosen)
             else:
                 raise ValueError(
                     "Demanded wavelengths for trap not found in data folder, the possible wavelengths are the following: ",
@@ -155,7 +160,7 @@ class Simulation:
                     params = json.load(json_file)
 
                 # initializing compare keys
-                comp_keys = ["Atomic system", "Material", "Trap wavelengths", "Considered state", "Geometry", "Surface"]
+                comp_keys = ["Atomic system", "Material", "Trap wavelengths", "Considered state", "Geometry", "Surface", "File names"]
 
                 # Compare Dictionaries on certain keys using all()
                 res = all(params.get(key) == self.params.get(key) for key in comp_keys)
@@ -325,6 +330,7 @@ class Simulation:
             },
             "Surface": [surface.params for surface in self.surface],
             "Data_folder": self.data_folder,
+            "File names": { f"{i}": file for (i, file) in enumerate(np.array([f for f in os.listdir(self.data_folder) if f.endswith(".npy")])[self.wavelengths_indices])}
         }
 
         print("[INFO] Simulation parameters set")
