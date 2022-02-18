@@ -12,14 +12,6 @@ import arc
 
 utils_path = os.path.split(os.path.dirname(__file__))[0] + r"/utils"
 
-# wignerprecal = np.load(utils_path + r"/precal.npy", allow_pickle=True)
-wignerprecal12 = np.load(utils_path + r"/precal12.npy", allow_pickle=True)
-
-
-def wigner6j12(j1, j2, j3, m1, m2, m3):
-    global wignerprecal12
-    return wignerprecal12[int(j3 - 1), int(m1), int(m3 + 10)]
-
 
 def asfraction(x):
     if x == 0.5:
@@ -89,6 +81,55 @@ class atomiclevel:
             return True
         else:
             return False
+
+    def couples_to(self, state):
+        return is_dipole_allowed(self.n, self.l, self.j, state.n, state.l, state.j)
+
+
+def is_dipole_allowed(n, l, j, n2, l2, j2):
+    if (
+        not (
+            abs(l - l2) != 1
+            and (
+                (abs(j - 0.5) < 0.1 and abs(j2 - 0.5) < 0.1)  # j = 1/2 and j'=1/2 forbidden
+                or (abs(j) < 0.1 and abs(j2 - 1) < 0.1)  # j = 0 and j'=1 forbidden
+                or (abs(j - 1) < 0.1 and abs(j2) < 0.1)  # j = 1 and j'=0 forbidden
+            )
+        )
+        and not (abs(j) < 0.1 and abs(j2) < 0.1)  # j = 0 and j'=0 forbiden
+        and not (abs(l) < 0.1 and abs(l2) < 0.1)  # l = 0 and l' = 0 is forbiden
+    ):
+        dl = abs(l - l2)
+        dj = abs(j - j2)
+        if dl == 1 and (dj < 1.1):
+            return True
+        else:
+            return False
+    return False
+
+
+def is_state_above(state1, state2, atom):
+    """Check if a given state1 is above state2 in the atomic structure of atom.
+
+    Args:
+        atom ([type]): [description]
+        state1 ([type]): [description]
+        state2 ([type]): [description]
+
+    Returns:
+        bool: True if state1 is above state2
+    """
+    return atom.getEnergy(state2.n, state2.l, state2.j) <= atom.getEnergy(state1.n, state1.l, state1.j)
+
+
+def is_above(n1, l1, j1, n2, l2, j2, atom):
+    """Check if a given state (n1,l1,j1) is above state (n2,l2,j2) in the atomic structure of atom.
+
+
+    Returns:
+        bool: True if state1 is above state2
+    """
+    return atom.getEnergy(n2, l2, j2) <= atom.getEnergy(n1, l1, j1)
 
 
 def convert_to_float(frac_str):
@@ -173,6 +214,7 @@ class atomicsystem:
         # self._atom = atom
         self._atom = atom.elementName
         self.rangeN = 16
+        self._s = 0.5  # valid for alkali atoms
         self.Nground = atom.groundStateN
 
         self._mass = atom.mass
@@ -216,10 +258,7 @@ class atomicsystem:
         if atlevel2 == self.groundstate:
             return False
         elif atlevel2 == self.excitedstate:
-            if atlevel1 == self.groundstate:
-                return True
-            else:
-                return False
+            return atlevel1 == self.groundstate
 
     @property
     def atom(self):
@@ -253,6 +292,43 @@ class atomicsystem:
         )
         self.id = np.eye(2 * self.f + 1, 2 * self.f + 1)
 
+    def get_coupled_levels(self, state, atom):
+        coupled_states = []
+
+        for n in range(self.Nground - 1, self.Nground + self.rangeN + 1):
+            lmin = state.l - 1
+            if lmin < -0.1:
+                lmin = state.l + 1
+            for l in range(lmin, min(state.l + 2, n)):
+                j = l - self._s
+                if j < 0.1:
+                    j += 1
+                while j <= l + self._s + 0.1:
+                    if is_dipole_allowed(state.n, state.l, state.j, n, l, j) and is_above(
+                        n, l, j, self.groundstate.n, self.groundstate.l, self.groundstate.j, atom
+                    ):
+                        coupled_states.append(atomiclevel(n, l, j))
+                    j += 1
+        return coupled_states
+
+    def get_physical_properties(self, states, atom):
+        dico = {}
+        upper = [0, 0, 0]
+        lower = [0, 0, 0]
+        for state in states:
+            if is_state_above(self.state, state, atom):
+                upper[:] = [self.state.n, self.state.l, self.state.j]
+                lower[:] = [state.n, state.l, state.j]
+            else:
+                upper[:] = [state.n, state.l, state.j]
+                lower[:] = [self.state.n, self.state.l, self.state.j]
+            dico[(state.n, state.l, state.j)] = (
+                atom.getTransitionFrequency(self.state.n, self.state.l, self.state.j, state.n, state.l, state.j),
+                atom.getReducedMatrixElementJ(self.state.n, self.state.l, self.state.j, state.n, state.l, state.j),
+                atom.getTransitionRate(*upper, *lower),
+            )
+        return dico
+
     def get_state(self):
         return self._state
 
@@ -265,127 +341,14 @@ class atomicsystem:
         pol.defineBasis(self.state.n, self.state.n + self.rangeN)
         self.alpha_core = pol.getPolarizability(700e-9, units="au")[3]
 
-        self.listlevels = []
-        self.dicoatom = {}
+        # self.listlevels = []
+        # self.dicoatom = {}
 
-        if self._state.j == 1 / 2 and self._state.l == 0 and self.Nground == self._state.n:
-            self.groundstate = self._state
-            for jnumber in [0.5, 1.5]:
-                for nnumber in range(self.Nground, self.Nground + self.rangeN + 1):
-                    self.listlevels.append(atomiclevel(nnumber, P, jnumber))
-                    self.dicoatom[(nnumber, P, jnumber)] = (
-                        atom.getTransitionFrequency(
-                            self.groundstate.n, self.groundstate.l, self.groundstate.j, nnumber, P, jnumber
-                        ),
-                        atom.getReducedMatrixElementJ(
-                            self.groundstate.n, self.groundstate.l, self.groundstate.j, nnumber, P, jnumber
-                        ),
-                        atom.getTransitionRate(
-                            nnumber, P, jnumber, self.groundstate.n, self.groundstate.l, self.groundstate.j
-                        ),
-                    )
+        self.groundstate = atomiclevel(self.Nground, 0, self._s)
+        self.excitedstate = state
 
-        elif self._state.j != 1 / 2 or self._state.l != 0 or self.Nground != self._state.n:
-            self.groundstate = atomiclevel(self.Nground, 0, 1 / 2)
-            self.excitedstate = self._state
-            self.listlevels.append(self.groundstate)
-
-            ##ground state
-            self.dicoatom[(self.groundstate.n, self.groundstate.l, self.groundstate.j)] = (
-                atom.getTransitionFrequency(
-                    self.excitedstate.n,
-                    self.excitedstate.l,
-                    self.excitedstate.j,
-                    self.groundstate.n,
-                    self.groundstate.l,
-                    self.groundstate.j,
-                ),
-                atom.getReducedMatrixElementJ(
-                    self.excitedstate.n,
-                    self.excitedstate.l,
-                    self.excitedstate.j,
-                    self.groundstate.n,
-                    self.groundstate.l,
-                    self.groundstate.j,
-                ),
-                atom.getTransitionRate(
-                    self.excitedstate.n,
-                    self.excitedstate.l,
-                    self.excitedstate.j,
-                    self.groundstate.n,
-                    self.groundstate.l,
-                    self.groundstate.j,
-                ),
-            )
-
-            ##S1/2 levels
-            jnumber = 1 / 2
-            for nnumber in range(self.Nground + 1, self.Nground + self.rangeN + 1):
-                self.listlevels.append(atomiclevel(nnumber, S, jnumber))
-                self.dicoatom[(nnumber, S, jnumber)] = (
-                    atom.getTransitionFrequency(
-                        self.excitedstate.n, self.excitedstate.l, self.excitedstate.j, nnumber, S, jnumber
-                    ),
-                    atom.getReducedMatrixElementJ(
-                        self.excitedstate.n, self.excitedstate.l, self.excitedstate.j, nnumber, S, jnumber
-                    ),
-                    atom.getTransitionRate(
-                        nnumber, S, jnumber, self.excitedstate.n, self.excitedstate.l, self.excitedstate.j
-                    ),
-                )
-
-            ##D3/2 and D5/2 levels
-            for jnumber in [3 / 2, 5 / 2]:
-                for nnumber in range(self.Nground - 1, self.Nground + 2 + self.rangeN + 1):
-                    self.listlevels.append(atomiclevel(nnumber, D, jnumber))
-                    self.dicoatom[(nnumber, D, jnumber)] = (
-                        atom.getTransitionFrequency(
-                            self.excitedstate.n, self.excitedstate.l, self.excitedstate.j, nnumber, D, jnumber
-                        ),
-                        atom.getReducedMatrixElementJ(
-                            self.excitedstate.n, self.excitedstate.l, self.excitedstate.j, nnumber, D, jnumber
-                        ),
-                        atom.getTransitionRate(
-                            nnumber, D, jnumber, self.excitedstate.n, self.excitedstate.l, self.excitedstate.j
-                        ),
-                    )
-
-        if self._state == self.groundstate:
-            wigner6j = np.zeros(
-                (
-                    3,
-                    np.shape(np.arange(abs(self._state.j - self.I), abs(self._state.j + self.I) + 1, 1))[0],
-                    np.shape(np.arange(abs(5 / 2 - self.I), abs(5 / 2 + self.I) + 1, 1))[0],
-                )
-            )
-            for f in np.arange(abs(self._state.j - self.I), abs(self._state.j + self.I) + 1, 1):
-                for fsum in np.arange(abs(3 / 2 - self.I), abs(3 / 2 + self.I) + 1, 1):
-                    wigner6j[0, int(f - abs(self._state.j - self.I)), int(fsum - 1)] = wigner_6j(
-                        self._state.j, 1 / 2, 1, fsum, f, self.I
-                    )
-                    wigner6j[1, int(f - abs(self._state.j - self.I)), int(fsum - 1)] = wigner_6j(
-                        self._state.j, 3 / 2, 1, fsum, f, self.I
-                    )
-        elif self._state == self.excitedstate:
-            wigner6j = np.zeros(
-                (
-                    3,
-                    np.shape(np.arange(abs(self._state.j - self.I), abs(self._state.j + self.I) + 1, 1))[0],
-                    np.shape(np.arange(abs(5 / 2 - self.I), abs(5 / 2 + self.I) + 1, 1))[0],
-                )
-            )
-            for f in np.arange(abs(self._state.j - self.I), abs(self._state.j + self.I) + 1, 1):
-                for fsum in np.arange(abs(5 / 2 - self.I), abs(5 / 2 + self.I) + 1, 1):
-                    wigner6j[0, int(f - abs(self._state.j - self.I)), int(fsum - 1)] = wigner_6j(
-                        self._state.j, 1 / 2, 1, fsum, f, self.I
-                    )
-                    wigner6j[1, int(f - abs(self._state.j - self.I)), int(fsum - 1)] = wigner_6j(
-                        self._state.j, 3 / 2, 1, fsum, f, self.I
-                    )
-                    wigner6j[2, int(f - abs(self._state.j - self.I)), int(fsum - 1)] = wigner_6j(
-                        self._state.j, 5 / 2, 1, fsum, f, self.I
-                    )
-        self.wigner6j = wigner6j
+        self.listlevels = self.get_coupled_levels(state, atom)
+        self.dicoatom = self.get_physical_properties(self.listlevels, atom)
 
     # state set as property so Wigner6j update when changing state
     state = property(get_state, set_state, None, "gives wigner6j")
@@ -434,15 +397,21 @@ class atomicsystem:
                 + 1 / (sign * omega + (2 * np.pi * cc / lmbda) + 1j * gamma / 2)
             )
             for fsum in np.arange(abs(level.j - self.I), abs(level.j + self.I) + 1, 1):
-                tot += (
-                    rde
-                    * np.conj(rde)
-                    * freq
-                    * (2 * fsum + 1)
-                    * (self.wigner6j[int(level.j - 1 / 2), int(self.f - abs(self.state.j - self.I)), int(fsum - 1)])
-                    ** 2
-                )
-        tot = (1 / (3 * hbar)) * au ** 2 * tot
+                try:
+                    tot += (
+                        rde
+                        * np.conj(rde)
+                        * freq
+                        * (2 * fsum + 1)
+                        # * (self.wigner6j[int(level.j - 1 / 2), int(self.f - abs(self.state.j - self.I)), int(fsum - 1)])
+                        * wigner6j(self.state.j, level.j, 1, fsum, self.f, self.I) ** 2
+                    )
+                except ValueError as e:
+                    print(self.state.j, level.j, 1, fsum, self.f, self.I)
+                    print(self.state)
+                    print(level)
+                    raise e
+        tot *= (1 / (3 * hbar)) * au ** 2
         if self.state == self.groundstate:
             tot += self.alpha_core * AMU
         return tot
@@ -466,25 +435,24 @@ class atomicsystem:
         couplings = self.dicoatom
         for level in coupledlevels:
             c = couplings[(level.n, level.l, level.j)]
-            gamma = c[2]
-            omega = 2 * np.pi * c[0]
+            gamma = c[2] * 1e-12  # in THz
+            omega = 2 * np.pi * c[0] * 1e-12  # in THz
             rde = abs(c[1])
-            freq = np.real(
-                1 / (sign * omega - (2 * np.pi * cc / lmbda) - 1j * gamma / 2)
-                - 1 / (sign * omega + (2 * np.pi * cc / lmbda) + 1j * gamma / 2)
-            )
+            om = (2 * np.pi * cc / lmbda) * 1e-12
+            freq = np.real(1 / (sign * omega - om - 1j * gamma / 2) - 1 / (sign * omega + om + 1j * gamma / 2))
+
             for fsum in np.arange(abs(level.j - self.I), abs(level.j + self.I) + 1, 1):
                 tot += (
                     rde
                     * np.conj(rde)
                     * (-1) ** (self.f + fsum)
                     * np.sqrt(6 * self.f * (2 * self.f + 1) / (self.f + 1))
-                    * wigner6j12(1, 1, 1, self.f, self.f, fsum)
                     * freq
                     * (2 * fsum + 1)
-                    * self.wigner6j[int(level.j - 1 / 2), int(self.f - abs(self.state.j - self.I)), int(fsum - 1)] ** 2
+                    * wigner6j(1, 1, 1, self.f, self.f, fsum)
+                    * wigner6j(self.state.j, level.j, 1, fsum, self.f, self.I) ** 2
                 )
-        tot = (1 / hbar) * au ** 2 * tot / 2
+        tot = 1e-12 * (1 / hbar) * au ** 2 * tot / 2
         return tot
 
     def alpha_tensor(self, lmbda):
@@ -520,12 +488,14 @@ class atomicsystem:
                     * np.conj(rde)
                     * (-1) ** (self.f + fsum)
                     * np.sqrt(10 * self.f * (2 * self.f + 1) * (2 * self.f - 1) / (3 * (self.f + 1) * (2 * self.f + 3)))
-                    * wigner6j12(1, 1, 2, self.f, self.f, fsum)
+                    # * wigner6j12(1, 1, 2, self.f, self.f, fsum)
+                    * wigner6j(1, 1, 2, self.f, self.f, fsum)
                     * freq
                     * (2 * fsum + 1)
-                    * self.wigner6j[int(level.j - 1 / 2), int(self.f - abs(self.state.j - self.I)), int(fsum - 1)] ** 2
+                    # * self.wigner6j[int(level.j - 1 / 2), int(self.f - abs(self.state.j - self.I)), int(fsum - 1)] ** 2
+                    * wigner6j(self.state.j, level.j, 1, fsum, self.f, self.I) ** 2
                 )
-        tot = (1 / (hbar)) * au ** 2 * tot
+        tot *= (1 / (hbar)) * au ** 2
         return tot
 
     def delta_scalar(self, Ep, Em, E0):
