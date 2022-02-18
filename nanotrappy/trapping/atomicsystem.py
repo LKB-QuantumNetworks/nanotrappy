@@ -13,6 +13,13 @@ import arc
 utils_path = os.path.split(os.path.dirname(__file__))[0] + r"/utils"
 
 
+def wigner6j(j1, j2, j3, J1, J2, J3):
+    try:
+        return arc.wigner.Wigner6j(j1, j2, j3, J1, J2, J3)
+    except ValueError:
+        return 0
+
+
 def asfraction(x):
     if x == 0.5:
         return "1/2"
