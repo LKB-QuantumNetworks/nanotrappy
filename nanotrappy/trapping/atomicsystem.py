@@ -191,7 +191,7 @@ class atomicsystem:
             FmFm(f),
             FpFp(f),
         )
-        self.id = np.eye(2 * self.f + 1, 2 * self.f + 1)
+        self.id = np.eye(2 * self.f + 1,2 * self.f + 1)
 
         pol = arc.calculations_atom_single.DynamicPolarizability(atom, self.state.n, self.state.l, self.state.j)
         pol.defineBasis(self.state.n, self.state.n + self.rangeN)
@@ -588,7 +588,7 @@ class atomicsystem:
         Htemp = self.totalshift(Ep, Em, E0) / (mK * kB)
         vals, vec = LA.eig(Htemp)
         idx = vals.argsort()
-        return vals[idx], vec[idx]
+        return np.squeeze(vals[idx]), np.squeeze(vec[idx])
 
     def potential_partial(self, Ep, Em, E0, contrib="scalar", show=False):
         """This function computes the trapping potential energy for a given electric field and the given state and hyperfine state F of the atom, at the wavelength lambda.

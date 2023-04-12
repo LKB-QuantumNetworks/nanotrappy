@@ -43,7 +43,6 @@ class SequentialSimulator(Simulator):
 
     def simulate(self, simulation, potential_number, mf_shift):
         size = simulation.Etot.shape[1:]
-
         ranges = [range(s) for s in size]
         # ranges[0] = progressbar(ranges[0], "\n Computing: ", 40)
         for idx in itertools.product(*ranges):

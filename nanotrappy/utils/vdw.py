@@ -95,7 +95,7 @@ class PlaneSurface(Surface):
         return d
 
     def get_slab(self, axis_data, trap_data, simul, axis, manual_edge=None):
-        dot_product = np.dot(self.normal_axis.to_normal_vector(), axis)
+        dot_product = np.dot(self.normal_axis.to_normal_vector(), axis.to_normal_vector())
         if abs(dot_product) != 1:
             return -1, trap_data
         else:

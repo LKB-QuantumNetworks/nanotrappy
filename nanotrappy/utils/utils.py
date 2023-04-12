@@ -120,8 +120,9 @@ def check_mf(f, mf):
         mf = np.array([mf])
     else:
         mf = np.array(mf)
-
-    if any(mf > f) or any(mf < -f):
+        
+    if mf > f or mf < -f:
+    # if any(mf > f) or any(mf < -f):
         raise ValueError("m_F should be in the interval [-F,F]")
     else:
         return f, mf
@@ -203,7 +204,7 @@ def vec_to_string(vec):
 def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
-    return idx  # array[idx]
+    return idx
 
 
 def intersection(lst1, lst2):
@@ -226,3 +227,14 @@ def blockPrint():
 # Restore
 def enablePrint():
     sys.stdout = sys.__stdout__
+
+def findKClosestElements(nums, k, target):
+    left = 0
+    right = len(nums) - 1
+ 
+    while right - left >= k:
+        if abs(nums[left] - target) > abs(nums[right] - target):
+            left = left + 1
+        else:
+            right = right - 1
+    return nums[left:left + k]

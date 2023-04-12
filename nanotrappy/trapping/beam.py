@@ -38,6 +38,17 @@ class Beams():
             return True
         else:
             return False
+        
+    def isBeamSum(self):
+            """Checks if a Beams object is an instance of the Beam subclass.
+
+            Returns:
+                bool: True if the object is an instance of the Beam subclass
+            """
+            if type(self).__name__ == "BeamSum":
+                return True
+            else:
+                return False
  
 class Beam(Beams):
     """This is the subclass that implements a single beam.
@@ -56,10 +67,17 @@ class Beam(Beams):
         >>> BP = Beam(852e-9,"f",1*mW)
         
     """
-    def __init__(self,lmbda,direction,power):
+    def __init__(self,lmbda,direction,power, index = None):
         self.lmbda= lmbda
         self.direction = direction
         self.power = power
+        if index == None :
+            self.indices = None
+        elif isinstance(index, int):
+            self.indices =  index
+        else : 
+            raise ValueError("If an index is specified it has to be integer !")
+        
         
     def get_lmbda(self):
         """Getter function for the lmbda attribute
@@ -83,8 +101,11 @@ class Beam(Beams):
         Returns:
             float: power of the beam
         """
-        return self.power
-
+        return [self.power]
+    
+    def get_indices(self):
+        return self.indices
+    
     def set_power(self, power):
         """Set the power attribute of the beam.
 
@@ -139,11 +160,14 @@ class BeamPair(Beams):
     """
     def __init__(self,lmbda1,power1,lmbda2,power2):
         if abs(lmbda1-lmbda2)<pu.wavelength_equality_tolerance:
-            if power1 == power2:
-                self.beam1 = Beam(lmbda1,"f",power1)
-                self.beam2 = Beam(lmbda2,"b",power2)
-            else : 
-                raise ValueError('Cannot set different values of power for a pair of beams.')
+            # if power1 == power2:
+            #     self.beam1 = Beam(lmbda1,"f",power1)
+            #     self.beam2 = Beam(lmbda2,"b",power2)
+            # else : 
+            #     raise ValueError('Cannot set different values of power for a pair of beams.')
+
+            self.beam1 = Beam(lmbda1,"f",power1)
+            self.beam2 = Beam(lmbda2,"b",power2)
         else:
             raise ValueError('Cannot set different values of wavelengths for a pair of beams.')
             
@@ -167,7 +191,11 @@ class BeamPair(Beams):
         Caution:
             As the two powers have to be equal, this functions returns only one float.
         """
-        return self.beam1.power
+        return np.array([self.beam1.power, self.beam2.power])
+        # return self.beam1.power
+    
+    def get_indices(self):
+        return np.array([None, None])
     
     def set_lmbda(self, *args):
         """Set the wavelengths of a BeamPair
@@ -195,7 +223,7 @@ class BeamPair(Beams):
         else :
             raise ValueError("Too many values to unpack")
             
-    def set_power(self,power):
+    def set_power(self,*args):
         """Set the powers of a BeamPair
 
         Only one power is needed as the powers have to be the same.
@@ -204,5 +232,71 @@ class BeamPair(Beams):
             power (float): new power to be set for the two beams (W)
 
         """
-        self.beam1.power = power
-        self.beam2.power = power
+        if len(args) == 1 :
+            self.beam1.power = args[0]
+            self.beam2.power = args[0]
+        elif len(args) == 2 :
+            self.beam1.power = args[0]
+            self.beam2.power = args[1]
+        else:
+            raise ValueError("You must give either 1 or 2 powers.")
+
+class BeamSum(Beams):
+    """This is the subclass that implements a sum of beams. It can be useful when you want to tune the relative powers between the different beams
+
+        >>> BS = BeamSum(852e-9,1*mW,852e-9,1*mW)
+        
+    """
+    def __init__(self,lmbdas,powers, indices = None):
+        if indices == None :
+            self.indices = np.array([None for k in range(len(lmbdas))])
+        elif len(indices) == len(lmbdas):
+            self.indices =  np.array(indices)
+        else : 
+            raise ValueError("Please specify as many indices as wavelengths in the BeamSum object or not at all")
+        
+        self.beams = []
+        if len(lmbdas) != len(powers) :
+            raise ValueError("Please specify as many wavelengths as powers in the BeamSum object")
+        for k in range(len(lmbdas)):
+            self.beams += [Beam(lmbdas[k],"f", powers[k])]
+            
+    def get_lmbda(self):
+        """Get the wavelengths of a BeamPair
+
+        Returns:
+            array: an array of the two wavelengths
+        """
+        return np.array([beam.lmbda for beam in self.beams])
+    
+    def get_direction(self):
+        raise ValueError("In a BeamSum all beams are 'forward'")
+        
+    def get_indices(self):
+        return self.indices
+        
+    def get_power(self):
+        """Get the powers of a BeamSum
+
+        Returns:
+            list: power of each beam
+        """
+        return np.array([beam.power for beam in self.beams])
+    
+    def set_lmbda(self, *args):
+        return
+            
+    def set_power(self,powers):
+        """Set the powers of a BeamPair
+
+        Only one power is needed as the powers have to be the same.
+
+        Args:
+            power (float): new power to be set for the two beams (W)
+
+        """
+        if len(powers) != len(self.beams) :
+            raise ValueError("Please specify as many new powers as there are beams in the BeamSum object")
+
+        for k in range(len(self.beams)):
+            self.beams[k].power = powers[k]

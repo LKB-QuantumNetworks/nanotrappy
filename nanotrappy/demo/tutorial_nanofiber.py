@@ -13,10 +13,9 @@ from nanotrappy.utils.physicalunits import *
 import time, os
 import matplotlib.pyplot as plt
 
-
 if __name__ == "__main__":
 
-    datafolder = os.path.dirname(os.path.abspath(__file__)) + "/testfolder"
+    datafolder = os.path.dirname(os.path.abspath(__file__)) + "\\testfolder"
 
     red_beam = BeamPair(937e-9, 0.95 * mW, 937e-9, 0.95 * mW)
     blue_beam = BeamPair(685.5e-9, 16 * mW, 685.6e-9, 16 * mW)
