@@ -240,23 +240,25 @@ class Simulation:
                     E_bwd = self.inverse_propagation_direction(E[beam_number + 1])
                     E_fwd = E[beam_number]
                     
+                    #rescale power of second beam because everything will be rescaled by the power of the first beam in the end !
                     p0 = beam.get_power()[0]
                     self.Etot = E_fwd + E_bwd*np.sqrt(beam.get_power()[1]/p0)
-                    # beam.set_power(p0)
+
                     # sum light shifts and then diagonalize to have mean, even if frequencies are close
                     if beam.get_lmbda()[0] != beam.get_lmbda()[1]:
-                        # print(
-                        #     "[INFO] Computing potential for the running wave with two beams with different frequencies"
-                        # )
+                        print(
+                            "[INFO] Computing potential for the running wave with two beams with different frequencies"
+                        )
                         self.simulator.simulate_pair(self, beam, E_fwd, E_bwd*np.sqrt(beam.get_power()[1]/p0), potential_number, mf_shift)
-                        # print("[INFO] Done.")
+                        print("[INFO] Done.")
 
                     else:
                         print("[INFO] Computing potential for the standing wave...")
                         self.simulator.simulate(self, potential_number, mf_shift)
                         print("[INFO] Done.")
                 elif beam.isBeamSum():
-                    self.atomicsystem.set_alphas(beam.get_lmbda()[0]) #Only superpositions with the same lambda are allowed !
+                    self.atomicsystem.set_alphas(beam.get_lmbda()[0]) 
+                    #Only superpositions with the same lambda are allowed !
                     Etot = []
                     for k,beam_component in enumerate(beam.beams):
                         Ek = E[k]
