@@ -30,8 +30,8 @@ class Trap_beams():
                 self.beams = np.append(self.beams,arg)
         if len(self.beams) == 0 :
             raise ValueError("You have to input at least one beam in the trap !")
-        if len(self.beams) >2 :
-            raise ValueError("If you want more than 2 beams, you have to use counterpropgating beams (BeamPair class) !")
+        # if len(self.beams) >2 :
+        #     raise ValueError("If you want more than 2 beams, you have to use counterpropgating beams (BeamPair class) !")
         self.propagation_axis=propagation_axis
             
     @property
@@ -70,6 +70,14 @@ class Trap_beams():
             directions = np.append(directions,beam.get_direction())
         return directions
     
+    @property
+    def indices(self):
+        "Index of the file we want to use in the folder"
+        indices = np.array([], dtype = int)
+        for beam in self.beams :
+            indices = np.append(indices,beam.get_indices())
+        return indices
+        
     def set_powers(self, powerlist):
         """Set the powers of each beam in the trap
 

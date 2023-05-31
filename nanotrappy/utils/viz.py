@@ -162,7 +162,7 @@ class Viz:
                         "Power \n Beam %s (mW)" % (k + 1),
                         0,
                         Pranges[k],
-                        valinit=self.simul.trap.beams[k].get_power() * 1e3,
+                        valinit=self.simul.trap.beams[k].get_power()[0] * 1e3,
                         valstep=increments[k],
                         orientation="vertical",
                     )
@@ -180,7 +180,7 @@ class Viz:
             scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
             a = []
 
-            trap = np.real(self.simul.total_potential()[0])
+            trap = np.real(self.simul.total_potential())
             trap_noCP = np.real(self.simul.total_potential_noCP)
             ax.set_xlabel("%s (nm)" % (self.simul.geometry.name), fontsize=14)
             ax.set_ylabel("E (mK)", fontsize=14)
@@ -204,13 +204,13 @@ class Viz:
             if len(mf) == 1 and len(self.simul.trap.beams) == 2:
                 (b,) = plt.plot(
                     x / nm,
-                    np.real(self.simul.trap.beams[0].get_power() * np.real(self.simul.potentials[0, :, mf_index[0]])),
+                    np.real(self.simul.trap.beams[0].get_power()[0] * np.real(self.simul.potentials[0, :, mf_index[0]])),
                     color="blue",
                     linewidth=2,
                 )
                 (r,) = plt.plot(
                     x / nm,
-                    np.real(self.simul.trap.beams[1].get_power() * np.real(self.simul.potentials[1, :, mf_index[0]])),
+                    np.real(self.simul.trap.beams[1].get_power()[0] * np.real(self.simul.potentials[1, :, mf_index[0]])),
                     color="red",
                     linewidth=2,
                 )
@@ -229,7 +229,7 @@ class Viz:
                         "Power \n Beam %s (mW)" % (k + 1),
                         0,
                         Pranges[k],
-                        valinit=self.simul.trap.beams[k].get_power() * 1e3,
+                        valinit=self.simul.trap.beams[k].get_power()[0]*1e3,
                         valstep=increments[k],
                     )
                 )
@@ -272,7 +272,7 @@ class Viz:
                 for (k, slider) in enumerate(slider_ax):
                     P.append(slider.val * mW)
                 self.simul.trap.set_powers(P)
-                trap = np.real(self.simul.total_potential()[0])  ### weird [0]
+                trap = np.real(self.simul.total_potential()) 
                 for k in range(len(mf)):
                     trap_k = trap[:, mf_index[k]]
                     a[k].set_ydata(trap_k)
@@ -280,12 +280,12 @@ class Viz:
                 if len(mf) == 1 and len(self.simul.trap.beams) == 2:
                     b.set_ydata(
                         np.real(
-                            self.simul.trap.beams[0].get_power() * np.real(self.simul.potentials[0, :, mf_index[0]])
+                            self.simul.trap.beams[0].get_power()[0] * np.real(self.simul.potentials[0, :, mf_index[0]])
                         )
                     )
                     r.set_ydata(
                         np.real(
-                            self.simul.trap.beams[1].get_power() * np.real(self.simul.potentials[1, :, mf_index[0]])
+                            self.simul.trap.beams[1].get_power()[0] * np.real(self.simul.potentials[1, :, mf_index[0]])
                         )
                     )
 
@@ -397,7 +397,7 @@ class Viz:
         axis_name_list = [main_axis.name, axis1.name, axis2.name]
 
         main_axis_data = main_axis.fetch_in(self.simul)
-        axis1_data, axis2_data = axis1.fetch_in(self.simul), axis2.fetch_in(self.simul)
+        axis1_data, axis2_data = np.reshape(axis1.fetch_in(self.simul),-1), np.reshape(axis2.fetch_in(self.simul),-1)
 
         if len(self.simul.E[0].shape) != 4:
             print("[WARNING] 3D Electric fields must be fed in the Simulation class in order to use this function")
@@ -578,7 +578,7 @@ class Viz:
             plt.show()
             return fig, ax, slider_ax
 
-    def get_min_trap(self, y_outside, trap_outside, edge_no_surface=None):
+    def get_min_trap(self, y_outside, trap_outside, edge_no_surface=None, verbose = True):
         """Finds the minimum of the trap (ie total_potential()) computed in the simulation object
 
         Args:
@@ -605,16 +605,24 @@ class Viz:
                 (ie difference between the trap depth and the closest local maxima).
                 - float: Idx of left prominence if exists
         """
-
+        verboseprint = print if verbose else lambda *a, **k: None
+        
+        # l = len(y_outside)
+        if edge_no_surface is not None:
+            threshold = np.argmin(np.abs(y_outside - (edge_no_surface + 30e-9))) #no closer than 30 nm
+        else : 
+            threshold = 0
+        # print("threshold :", threshold)
+        # threshold = int(0.08*l) #8% of the whole range of y
         if np.ndim(trap_outside) >= 3:
             raise TypeError("This method can only be used if a 1D computation of the potential has been done.")
-
-        local_minima = find_peaks(-trap_outside, distance=10, prominence=5e-4)
+        local_minima = find_peaks(-trap_outside, distance=10, prominence=1e-5)
+        # print(local_minima)
         if len(local_minima[0]) == 0:
-            print("[WARNING] No local minimum found")
+            verboseprint("[WARNING] No local minimum found")
             return np.nan, np.nan, 0, 0, np.nan
-        elif len(local_minima[0]) == 1 and local_minima[0][0] > 5:
-            print("[INFO] One local miminum found at %s" % (y_outside[local_minima[0][0]]))
+        elif len(local_minima[0]) == 1 and local_minima[0][0] > threshold:
+            verboseprint("[INFO] One local miminum found at %s" % (y_outside[local_minima[0][0]]))
             return (
                 local_minima[0][0],
                 y_outside[local_minima[0][0]],
@@ -622,24 +630,34 @@ class Viz:
                 -local_minima[1]["prominences"][0],
                 local_minima[1]["left_bases"][0],
             )
-        elif len(local_minima[0]) == 1 and local_minima[0][0] <= 5:
-            print("[WARNING] One local minimum found but too close to the edge of the structure")
+        elif len(local_minima[0]) == 1 and local_minima[0][0] <= threshold:
+            verboseprint("[WARNING] One local minimum found but too close to the edge of the structure")
             return np.nan, np.nan, 0, 0, np.nan
         else:
-            arg = np.argmin(np.real(trap_outside[local_minima[0]]))
-            print(
-                "[WARNING] Many local minima found, taking only the lowest one into account at %s"
-                % (y_outside[local_minima[0][arg]])
+            args = local_minima[0]
+            prom = local_minima[1]["prominences"][args > threshold]
+            base = local_minima[1]["left_bases"][args > threshold]
+            args = args[args > threshold] #Removing the ones too close to the surface
+            verboseprint(args)
+            try :
+                args = [args[np.argmax(prom)]]
+            except : 
+                ValueError("[WARNING] Many local minima found but none above the threshold")
+                return np.nan, np.nan, 0, 0, np.nan
+            # print(args)
+            verboseprint(
+                "[WARNING] Many local minima found, taking only the biggest one into account at %s"
+                % (y_outside[args[0]])
             )
             return (
-                local_minima[0][arg],
-                y_outside[local_minima[0][arg]],
-                trap_outside[local_minima[0][arg]],
-                -local_minima[1]["prominences"][arg],
-                local_minima[1]["left_bases"][0],
+                args[0],
+                y_outside[args[0]],
+                trap_outside[args[0]],
+                prom[0],
+                base[0],
             )
 
-    def get_trapfreq(self, y_outside, trap_outside, edge_no_surface=None):
+    def get_trapfreq(self, y_outside, trap_outside, edge_no_surface=None, fit_range=None):
         """Finds the value of the trapping frequency (in Hz) along the specified axis
 
         Args:
@@ -647,7 +665,7 @@ class Viz:
             axis (str): axis along which we want to compute the trapping frequency.
             mf (int or list): Mixed mf state we want to analyze. Default to 0.
             edge_no_surface (float): Position of the edge of the structure. Only needed when no Surface is specified. When a Surface object is given, it is found automatically with the CP masks. Defaults to None.
-
+            fit_range (float) : width (in points) for the quadratic fit around the trap minimum. If not specified, the range is taken as half the distance between the trap position and the peak base. 
         Raise:
             TypeError: if only a 2D computation of the potential has been done before plotting.
 
@@ -658,8 +676,9 @@ class Viz:
         if np.ndim(trap_outside) >= 3:
             raise TypeError("The trap given must be one-dimensional")
 
-        min_pos_index, min_pos, depth, height, height_idx = self.get_min_trap(y_outside, trap_outside, edge_no_surface)
-        if np.isnan(min_pos):
+        min_pos_index, min_pos, depth, height, height_idx = self.get_min_trap(y_outside, trap_outside, edge_no_surface, False)
+        # print(min_pos, height_idx)
+        if np.isnan(min_pos) and self.simul.geometry.name == 'x':
             trap_outside3 = np.concatenate((trap_outside, trap_outside, trap_outside))
             y_outside3 = np.concatenate(
                 (y_outside - (y_outside[-1] - y_outside[0]), y_outside, y_outside + (y_outside[-1] - y_outside[0]))
@@ -672,13 +691,23 @@ class Viz:
                 return 0
             else:
                 pass
-
+        elif np.isnan(min_pos) and self.simul.geometry.name != 'x':
+            return 0
+        
         height_pos = y_outside[height_idx]  ## Gives the position of the barrier
         yleft = min_pos - (min_pos - height_pos) / 2
         yright = min_pos + (min_pos - height_pos) / 2
+                
         idx_left = find_nearest(y_outside, yleft)
         idx_right = find_nearest(y_outside, yright)
-
+        
+        if fit_range != None :
+            idx_left = min_pos_index - fit_range
+            idx_right = min_pos_index + fit_range
+        
+        if idx_right == idx_left:
+            return 0
+        # print(idx_right, idx_left)
         fit = np.polyfit(y_outside[idx_left:idx_right], trap_outside[idx_left:idx_right], 2)
 
         p = np.poly1d(fit)
@@ -688,6 +717,43 @@ class Viz:
         moment2 = der2_fit[index_min]
         trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.mass)) * (1 / (2 * np.pi))
         return trap_freq
+    
+    def get_FWHM(self, y_outside, trap_outside, edge_no_surface=None):
+        """Finds the value of the Full Width Half Maximum 
+
+        Args:
+            simul (Simulation object): A simulation object with computation of 1D potential already run.
+            axis (str): axis along which we want to compute the trapping frequency.
+            mf (int or list): Mixed mf state we want to analyze. Default to 0.
+            edge_no_surface (float): Position of the edge of the structure. Only needed when no Surface is specified. When a Surface object is given, it is found automatically with the CP masks. Defaults to None.
+        """
+        if np.ndim(trap_outside) >= 3:
+            raise TypeError("The trap given must be one-dimensional")
+
+        def lin_interp(x, y, i, half):
+            return x[i] + (x[i+1] - x[i]) * ((half - y[i]) / (y[i+1] - y[i]))
+        
+        min_pos_index, min_pos, depth, height, height_idx = self.get_min_trap(y_outside, trap_outside, edge_no_surface)
+        # height_pos = y_outside[height_idx]  ## Gives the position of the barrier
+        # yleft = min_pos - (min_pos - height_pos) / 2
+        # yright = min_pos + (min_pos - height_pos) / 2
+        # idx_left, idx_right = find_nearest(y_outside, yleft),find_nearest(y_outside, yright)
+        # absy = np.abs(trap_outside[idx_left:idx_right])
+        # y_cut = y_outside[idx_left:idx_right]
+        absy = -trap_outside
+        half = np.max(np.abs(depth))/2.0
+        print("half", half)
+        signs = np.sign(np.add(absy, -half))
+        zero_crossings = (signs[0:-2] != signs[1:-1])
+        zero_crossings_i = np.where(zero_crossings)[0]
+        print("zero crossings", zero_crossings_i)
+        # print("min index", min_pos_index)
+        zeros = findKClosestElements(zero_crossings_i, 2, min_pos_index)
+        print(zeros)
+        hmx = [lin_interp(y_outside, absy, zeros[0], half),
+                lin_interp(y_outside, absy, zeros[1], half)]
+        fwhm = np.abs(hmx[1] - hmx[0])
+        return fwhm
 
     def ellipticity_plot(self, projection_axis):
         if self.simul.dimension == "2D":
@@ -719,7 +785,9 @@ class Viz:
             plt.title("Ellipticity")
         return Cz
 
-    def optimize(self, ymin=0, Pmin1=0, Pmax1=10, Pstep1=1, Pmin2=0, Pmax2=10, Pstep2=1):
+    def optimize(self, ymin=0, Pmin1=0, Pmax1=10, Pstep1=1, Pmin2=0, Pmax2=10, Pstep2=1, mf = 0):
+        _, mf = check_mf(self.simul.atomicsystem.f, mf)
+        mf_index = int(mf + self.simul.atomicsystem.f)
         Prange1 = list(reversed(np.arange(Pmin1, Pmax1, Pstep1)))
         Prange2 = np.arange(Pmin2, Pmax2, Pstep2)
 
@@ -728,36 +796,39 @@ class Viz:
         res_height = np.zeros((len(Prange1), len(Prange2)))
         res_freq = np.zeros((len(Prange1), len(Prange2)))
 
-        yidx = find_nearest(self.simul.axis, ymin)
-        yout = self.simul.axis[yidx:]
+        yidx = find_nearest(self.simul.geometry.fetch_in(self.simul), ymin)
+        yout = self.simul.geometry.fetch_in(self.simul)[yidx:]
 
         for i, P1 in progressbar_enumerate(Prange1, "\n Optimizing: ", 40):
+        # for i, P1 in enumerate(Prange1):
             for j, P2 in enumerate(Prange2):
                 # for i, P1 in enumerate(Prange):
                 #     for j, P2 in enumerate(Prange):
                 self.simul.trap.set_powers([P1, P2])
-                pot = np.real(self.simul.total_potential()[yidx:, 0])
+                pot = np.real(self.simul.total_potential()[0, yidx:, mf_index])
                 min_idx, min_pos, depth, height, height_idx = self.get_min_trap(yout, pot)
-
+                # sys.stdout.write("depth")
                 ######### frequencies
                 if np.isnan(height_idx):
                     trap_freq = 0
                 else:
-                    height_pos = yout[height_idx]  ## Gives the position of the barrier
-                    yleft = min_pos - (min_pos - height_pos) / 2
-                    yright = min_pos + (min_pos - height_pos) / 2
-                    idx_left = find_nearest(yout, yleft)
-                    idx_right = find_nearest(yout, yright)
-
-                    fit = np.polyfit(yout[idx_left:idx_right], pot[idx_left:idx_right], 2)
-
-                    p = np.poly1d(fit)
-                    der_fit = np.real(np.gradient(p(yout), yout))
-                    der2_fit = np.gradient(der_fit, yout)
-                    index_min = np.argmin(np.abs(yout - min_pos))
-                    moment2 = der2_fit[index_min]
-                    trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.mass)) * (1 / (2 * np.pi)) / kHz
-
+                    try :
+                        height_pos = yout[height_idx]  ## Gives the position of the barrier
+                        yleft = min_pos - (min_pos - height_pos) / 2
+                        yright = min_pos + (min_pos - height_pos) / 2
+                        idx_left = find_nearest(yout, yleft)
+                        idx_right = find_nearest(yout, yright)
+                        fit = np.polyfit(yout[idx_left:idx_right], pot[idx_left:idx_right], 2)
+    
+                        p = np.poly1d(fit)
+                        yinterp = np.linspace(yout[0], yout[-1], 500)
+                        der_fit = np.real(np.gradient(p(yinterp), yinterp))
+                        der2_fit = np.gradient(der_fit, yinterp)
+                        index_min = np.argmin(np.abs(yinterp - min_pos))
+                        moment2 = der2_fit[index_min]
+                        trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.mass)) * (1 / (2 * np.pi)) / kHz
+                    except :
+                        trap_freq = 0
                 ##################
 
                 if abs(depth) > 10:
@@ -777,21 +848,18 @@ class Viz:
 
         return res_pos, res_depth, res_height, res_freq
 
-    def optimize_and_show(self, ymin=0, Pmin1=0, Pmax1=10, Pstep1=1, Pmin2=0, Pmax2=10, Pstep2=1):
+    def optimize_and_show(self, ymin=0, Pmin1=0, Pmax1=10, Pstep1=1, Pmin2=0, Pmax2=10, Pstep2=1, mf = 0):
         ################################################################################################################
         ############################################ Optimization procedure ############################################
         ################################################################################################################
-
-        blockPrint()
+        # blockPrint()
         opt_pos, opt_depth, opt_height, opt_freq = self.optimize(
-            ymin=ymin, Pmin1=Pmin1, Pmax1=Pmax1, Pstep1=Pstep1, Pmin2=Pmin2, Pmax2=Pmax2, Pstep2=Pstep2
+            ymin=ymin, Pmin1=Pmin1, Pmax1=Pmax1, Pstep1=Pstep1, Pmin2=Pmin2, Pmax2=Pmax2, Pstep2=Pstep2, mf = mf
         )
-        enablePrint()
-
+        # enablePrint()
         ################################################################################################################
         ################################################## Pretty show #################################################
         ################################################################################################################
-
         methods = [
             None,
             "none",
@@ -835,21 +903,25 @@ class Viz:
 
         #################################
         # ax4 = plt.subplot(224)
-        # im4 = ax4.imshow(
-        #     opt_freq,
-        #     cmap=color_map,
-        #     interpolation="lanczos",
-        #     extent=[Pmin2 / mW, Pmax2 / mW, Pmin1 / mW, Pmax1 / mW],
-        #     aspect="auto",
-        # )
-        # # for (j, i), label in np.ndenumerate(opt):
-        # #     plt.text(i, j, label, ha="center", va="center")
-        # plt.colorbar(im4, ax=ax4)
-        # ax4.set_title("Trap frequency (nm)")
-        # ax4.set_xlabel("P2 (mW)")
-        # ax4.set_ylabel("P1 (mW)")
+        fig = plt.figure(figsize=(3.4, 2.5))  # in inches
+        ax4 = fig.add_subplot()
+        im4 = ax4.imshow(
+            opt_freq,
+            cmap=color_map,
+            interpolation = "nearest",
+            # interpolation="lanczos",
+            extent=[Pmin2 / mW, Pmax2 / mW, Pmin1 / mW, Pmax1 / mW],
+            aspect="auto",
+        )
+        # for (j, i), label in np.ndenumerate(opt):
+        #     plt.text(i, j, label, ha="center", va="center")
+        cbar = plt.colorbar(im4, ax=ax4)
+        cbar.ax.set_ylabel("Trap frequency (kHz)", fontsize=8)
+        ax4.set_title("Trap frequency (nm)")
+        ax4.set_xlabel("P2 (mW)")
+        ax4.set_ylabel("P1 (mW)")
 
-        # plt.tight_layout()
+        plt.tight_layout()
 
         ################################
 
@@ -882,7 +954,8 @@ class Viz:
         im3 = ax3.imshow(
             opt_height,
             cmap=color_map,
-            interpolation="lanczos",
+            interpolation="nearest",
+            # interpolation="lanczos",
             extent=[Pmin2 / mW, Pmax2 / mW, Pmin1 / mW, Pmax1 / mW],
             aspect="auto",
             rasterized=True,

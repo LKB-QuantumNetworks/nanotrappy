@@ -109,15 +109,21 @@ class Simulation:
                 ValueError: If at least one wavelength wanted for the trap cannot be found in the data folder.
         """
         self.wavelengths_indices = np.array([], dtype=int)
-        for elem in self.trap.lmbdas:
+        for k,elem in enumerate(self.trap.lmbdas):
             idx = np.where(np.isclose(self.lmbdas_modes, elem, atol=1e-11))
-            if len(idx[0]) == 1:
+            if len(idx[0]) == 1 :
                 self.wavelengths_indices = np.append(self.wavelengths_indices, idx)
-            elif len(idx[0]) >= 2:  
-                print("Various fileswith corresponding wavelengths found in data folder, the possible filenames are the following: ",
-                np.array([f for f in os.listdir(self.data_folder) if f.endswith(".npy")])[idx])
+            elif len(idx[0]) >= 2 and self.trap.indices[k] is None :  
+                print(self.trap.indices[k])
+                files = [f for f in os.listdir(self.data_folder) if f.endswith(".npy")]
+
+                print("Various files with corresponding wavelengths found in data folder, the possible filenames are the following: ",
+                np.array(files)[idx])
                 idx_chosen =int(input("Please choose filenumber you want to use (has to be integer) : "))
-                self.wavelengths_indices = np.append(self.wavelengths_indices, idx_chosen)
+                real_idx = files.index(np.array(files)[idx][idx_chosen])
+                self.wavelengths_indices = np.append(self.wavelengths_indices, real_idx)
+            elif len(idx[0]) >= 2 and self.trap.indices[k] is not None :
+                self.wavelengths_indices = np.append(self.wavelengths_indices, self.trap.indices[k])
             else:
                 raise ValueError(
                     "Demanded wavelengths for trap not found in data folder, the possible wavelengths are the following: ",
@@ -127,14 +133,23 @@ class Simulation:
     def set_data(self):
         self.E = []
         self.set_wavelengths_indices()
+        print(self.wavelengths_indices)
         files = np.array([f for f in os.listdir(self.data_folder) if f.endswith(".npy")])
         print("[INFO] Files used for computing the trap :", files[self.wavelengths_indices])
         for filename in files[self.wavelengths_indices]:
             raw_data = np.load(self.data_folder + "//" + filename, allow_pickle=True)
-            self.x = np.array(raw_data[1])
-            self.y = np.array(raw_data[2])
-            self.z = np.array(raw_data[3])
-            self.E.append(raw_data[4])
+            # print(np.shape(raw_data[4]))
+            # print(raw_data[1])
+            # print(raw_data[2])
+            # print(raw_data[3])
+            # print((3,len(raw_data[1]),len(raw_data[2]),len(raw_data[3])))
+            if np.shape(raw_data[4]) == (3,len(raw_data[1]),len(raw_data[2]),len(raw_data[3])):
+                self.x = np.array(raw_data[1])
+                self.y = np.array(raw_data[2])
+                self.z = np.array(raw_data[3])
+                self.E.append(raw_data[4])
+            else :
+                raise ValueError("The input file is ill formatted : the shape of the input field do not match the shape of the coordinate arrays")
 
     def get_data_dimension(self):
         return np.ndim(self.E[0]) - 1
@@ -190,7 +205,7 @@ class Simulation:
             self.Etot = np.load(self.data_folder + "/simulations/" + self.E_file, allow_pickle=True)
             self.vecs = np.load(self.data_folder + "/simulations/" + self.vecs_file, allow_pickle=True)
             self.already_saved = True
-            return self.total_potential()
+            # return self.total_potential()
 
         else:
             print("[INFO] New simulation")
@@ -224,20 +239,35 @@ class Simulation:
                     self.atomicsystem.set_alphas_contrapropag(*beam.get_lmbda())
                     E_bwd = self.inverse_propagation_direction(E[beam_number + 1])
                     E_fwd = E[beam_number]
-                    self.Etot = E_fwd + E_bwd
+                    
+                    #rescale power of second beam because everything will be rescaled by the power of the first beam in the end !
+                    p0 = beam.get_power()[0]
+                    self.Etot = E_fwd + E_bwd*np.sqrt(beam.get_power()[1]/p0)
 
                     # sum light shifts and then diagonalize to have mean, even if frequencies are close
                     if beam.get_lmbda()[0] != beam.get_lmbda()[1]:
                         print(
                             "[INFO] Computing potential for the running wave with two beams with different frequencies"
                         )
-                        self.simulator.simulate_pair(self, beam, E_fwd, E_bwd, potential_number, mf_shift)
+                        self.simulator.simulate_pair(self, beam, E_fwd, E_bwd*np.sqrt(beam.get_power()[1]/p0), potential_number, mf_shift)
                         print("[INFO] Done.")
 
                     else:
                         print("[INFO] Computing potential for the standing wave...")
                         self.simulator.simulate(self, potential_number, mf_shift)
                         print("[INFO] Done.")
+                elif beam.isBeamSum():
+                    self.atomicsystem.set_alphas(beam.get_lmbda()[0]) 
+                    #Only superpositions with the same lambda are allowed !
+                    Etot = []
+                    for k,beam_component in enumerate(beam.beams):
+                        Ek = E[k]
+                        Etot += [Ek*np.sqrt(beam.get_power()[k])]
+
+                    self.Etot = np.sum(np.array(Etot),axis = 0)
+                    # print(self.Etot.shape)
+                    self.simulator.simulate(self, potential_number, mf_shift)
+                        
                 else:
                     raise ValueError("Something bad happened. The trap should only contain Beam type objects")
 
@@ -245,7 +275,8 @@ class Simulation:
                 beam_number += 1 if beam.isBeam() else 2
 
             self.already_saved = False
-            return self.total_potential()
+            return
+            # return self.total_potential()
 
     def total_potential(self):
         """Uses the potentials attributes of the Simulation object for each beam to return their weighted sum with the specified powers
@@ -256,16 +287,22 @@ class Simulation:
         self.total_potential_noCP = np.zeros(np.shape(self.potentials[0]), dtype="float")
         self.total_vecs = np.zeros(np.shape(self.vecs[0]), dtype="complex")
         for (i, potential) in enumerate(self.potentials):
-            self.total_potential_noCP = self.total_potential_noCP + self.trap.beams[i].get_power() * potential
-            self.total_vecs = self.trap.beams[i].get_power() * self.vecs[i]
-
+            if self.trap.beams[i].isBeamPair():
+                p = self.trap.beams[i].get_power()[0]
+            elif self.trap.beams[i].isBeam():
+                p = self.trap.beams[i].get_power()
+            elif self.trap.beams[i].isBeamSum():
+                p = 1
+            self.total_potential_noCP = self.total_potential_noCP + p * np.real(potential)
+            self.total_vecs = p * self.vecs[i]
+            
         norm_total_vecs = np.linalg.norm(self.total_vecs, axis=-1)
 
         number_mf_levels = self.total_vecs.shape[-1]
         for m in range(number_mf_levels):
             self.total_vecs[..., m] /= norm_total_vecs
 
-        return self.total_potential_noCP + np.dstack([self.CP] * number_mf_levels)
+        return np.squeeze(self.total_potential_noCP + np.dstack([self.CP] * number_mf_levels))
 
     def set_current_params(self):
         """Sets a dictionnary with all the relevant parameters of the Simulation object and returns it.
@@ -333,7 +370,7 @@ class Simulation:
             "File names": { f"{i}": file for (i, file) in enumerate(np.array([f for f in os.listdir(self.data_folder) if f.endswith(".npy")])[self.wavelengths_indices])}
         }
 
-        print("[INFO] Simulation parameters set")
+        # print("[INFO] Simulation parameters set")
         return self.params
 
     def save(self):
