@@ -657,7 +657,7 @@ class Viz:
                 base[0],
             )
 
-    def get_trapfreq(self, y_outside, trap_outside, edge_no_surface=None, fit_range=2):
+    def get_trapfreq(self, y_outside, trap_outside, edge_no_surface=None, fit_range=None):
         """Finds the value of the trapping frequency (in Hz) along the specified axis
 
         Args:
@@ -665,7 +665,7 @@ class Viz:
             axis (str): axis along which we want to compute the trapping frequency.
             mf (int or list): Mixed mf state we want to analyze. Default to 0.
             edge_no_surface (float): Position of the edge of the structure. Only needed when no Surface is specified. When a Surface object is given, it is found automatically with the CP masks. Defaults to None.
-
+            fit_range (float) : width (in points) for the quadratic fit around the trap minimum. If not specified, the range is taken as half the distance between the trap position and the peak base. 
         Raise:
             TypeError: if only a 2D computation of the potential has been done before plotting.
 
@@ -695,10 +695,16 @@ class Viz:
             return 0
         
         height_pos = y_outside[height_idx]  ## Gives the position of the barrier
-        yleft = min_pos - (min_pos - height_pos) / fit_range
-        yright = min_pos + (min_pos - height_pos) / fit_range
+        yleft = min_pos - (min_pos - height_pos) / 2
+        yright = min_pos + (min_pos - height_pos) / 2
+                
         idx_left = find_nearest(y_outside, yleft)
         idx_right = find_nearest(y_outside, yright)
+        
+        if fit_range != None :
+            idx_left = min_pos_index - fit_range
+            idx_right = min_pos_index + fit_range
+        
         if idx_right == idx_left:
             return 0
         # print(idx_right, idx_left)

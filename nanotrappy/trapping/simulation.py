@@ -138,10 +138,18 @@ class Simulation:
         print("[INFO] Files used for computing the trap :", files[self.wavelengths_indices])
         for filename in files[self.wavelengths_indices]:
             raw_data = np.load(self.data_folder + "//" + filename, allow_pickle=True)
-            self.x = np.array(raw_data[1])
-            self.y = np.array(raw_data[2])
-            self.z = np.array(raw_data[3])
-            self.E.append(raw_data[4])
+            # print(np.shape(raw_data[4]))
+            # print(raw_data[1])
+            # print(raw_data[2])
+            # print(raw_data[3])
+            # print((3,len(raw_data[1]),len(raw_data[2]),len(raw_data[3])))
+            if np.shape(raw_data[4]) == (3,len(raw_data[1]),len(raw_data[2]),len(raw_data[3])):
+                self.x = np.array(raw_data[1])
+                self.y = np.array(raw_data[2])
+                self.z = np.array(raw_data[3])
+                self.E.append(raw_data[4])
+            else :
+                raise ValueError("The input file is ill formatted : the shape of the input field do not match the shape of the coordinate arrays")
 
     def get_data_dimension(self):
         return np.ndim(self.E[0]) - 1
