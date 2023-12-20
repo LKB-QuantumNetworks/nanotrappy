@@ -55,7 +55,7 @@ class Simulation:
         self._atomicsystem = atomicsystem
         self._trap = trap
         self._material = material
-        self._C3 = atomicsystem.get_C3(material, atomicsystem.state)
+        self._C3 = atomicsystem.get_C3(material, atomicsystem.state)[0]
         self.surface = args
 
         self.geometry = AxisX(coordinates=(0, 0))
@@ -110,6 +110,8 @@ class Simulation:
         """
         self.wavelengths_indices = np.array([], dtype=int)
         for k,elem in enumerate(self.trap.lmbdas):
+            print(elem)
+            # print(self.lmbdas_modes)
             idx = np.where(np.isclose(self.lmbdas_modes, elem, atol=1e-11))
             if len(idx[0]) == 1 :
                 self.wavelengths_indices = np.append(self.wavelengths_indices, idx)
@@ -138,11 +140,15 @@ class Simulation:
         print("[INFO] Files used for computing the trap :", files[self.wavelengths_indices])
         for filename in files[self.wavelengths_indices]:
             raw_data = np.load(self.data_folder + "//" + filename, allow_pickle=True)
-            # print(np.shape(raw_data[4]))
+            print(np.shape(raw_data[4]))
+            # raw_data[4] = np.moveaxis(raw_data[4], -2, 0)
+            
+            print(np.shape(raw_data[4]))
+
             # print(raw_data[1])
             # print(raw_data[2])
             # print(raw_data[3])
-            # print((3,len(raw_data[1]),len(raw_data[2]),len(raw_data[3])))
+            print((3,len(raw_data[1]),len(raw_data[2]),len(raw_data[3])))
             if np.shape(raw_data[4]) == (3,len(raw_data[1]),len(raw_data[2]),len(raw_data[3])):
                 self.x = np.array(raw_data[1])
                 self.y = np.array(raw_data[2])
@@ -258,11 +264,17 @@ class Simulation:
                         print("[INFO] Done.")
                 elif beam.isBeamSum():
                     self.atomicsystem.set_alphas(beam.get_lmbda()[0]) 
+                    self.power_sum = np.sum(beam.get_power())
+                    self.power_norm = beam.get_power()/self.power_sum
+                    print("power_sum", self.power_sum)
+                    print("power_norm", self.power_norm)
+
                     #Only superpositions with the same lambda are allowed !
                     Etot = []
                     for k,beam_component in enumerate(beam.beams):
                         Ek = E[k]
-                        Etot += [Ek*np.sqrt(beam.get_power()[k])]
+                        # Etot += [Ek*np.sqrt(beam.get_power()[k])]
+                        Etot += [Ek*np.sqrt(self.power_norm[k])]
 
                     self.Etot = np.sum(np.array(Etot),axis = 0)
                     # print(self.Etot.shape)
@@ -292,7 +304,8 @@ class Simulation:
             elif self.trap.beams[i].isBeam():
                 p = self.trap.beams[i].get_power()
             elif self.trap.beams[i].isBeamSum():
-                p = 1
+                p = np.sum(self.trap.beams[i].get_power())
+                print(p)
             self.total_potential_noCP = self.total_potential_noCP + p * np.real(potential)
             self.total_vecs = p * self.vecs[i]
             

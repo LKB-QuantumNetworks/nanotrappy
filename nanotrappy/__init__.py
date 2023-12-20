@@ -1,4 +1,5 @@
 from .utils.physicalunits import *
+from .utils.utils import set_axis_from_plane
 from arc import (Cesium, Caesium, Rubidium, Rubidium85, Rubidium87, Lithium6, Lithium7, Sodium, Potassium, Potassium39, Potassium40, Potassium41)
 
 from .trapping.atomicsystem import atomicsystem, atomiclevel
@@ -10,4 +11,4 @@ from .trapping.geometry import AxisX, AxisY, AxisZ, PlaneXY, PlaneXZ, PlaneYZ
 
 from .utils.materials import *
 from .utils.viz import Viz
-from .utils.vdw import PlaneSurface, CylindricalSurface, NoSurface
+from .utils.vdw import PlaneSurface, CylindricalSurface, NoSurface, SlabSurface, SlabSurface_noH

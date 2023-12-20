@@ -26,7 +26,13 @@ def kp(n, x):
 
 class Nanofiber:
     def __init__(self, material, cladding, radius=200e-9):
-        self.material = material
+        if type(material) == str:
+            self.material = material
+        elif type(material) == float:
+            self.material = SiO2()
+            self.material.n = material
+        else :
+            self.material = material
         self.cladding = cladding
         self.radius = radius
         self.width = 2 * radius
@@ -221,7 +227,16 @@ class Nanofiber:
                 for j in range(len(z)):
                     E[:, k, i, j] = self.electric_field_linear(x[k], y[i], z[j], lmbda, P, theta)
         return E
-
+    
+    def compute_E_circular(self, x, y, z, lmbda, P, theta, sign):
+        # P is given in Watts
+        beta = self.compute_beta(lmbda)
+        E = np.zeros((3, len(x), len(y), len(z)), dtype="complex")
+        for k in range(len(x)):
+            for i in range(len(y)):
+                for j in range(len(z)):
+                    E[:, k, i, j] = self.electric_field_circular(x[k], y[i], z[j], lmbda, P, sign)
+        return E
 
 if __name__ == "__main__":
     nanof = Nanofiber(SiO2(), air(), radius=250e-9)
@@ -231,9 +246,10 @@ if __name__ == "__main__":
     z = np.array([0])
     P = 1  # in Watts
     theta = 0  # radians
-    E = nanof.compute_E_linear(x, y, z, wavelength, P, theta)
+    E = nanof.compute_E_circular(x, y, z, wavelength, P, theta, -1)
 
     Exy = np.linalg.norm(E[:, :, :, 0], axis=0)
 
     plt.imshow(Exy)
+    plt.colorbar()
     plt.show()
