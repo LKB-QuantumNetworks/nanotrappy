@@ -190,6 +190,7 @@ class Viz:
             ax.set_title(
                 "1D plot of trapping potential \n for mf = %s along %s " % (mf, self.simul.geometry.name), fontsize=18
             )
+            ax.set_ylim(-10,10)
 
             for k in range(len(mf_index)):
                 colorVal = "k"  # scalarMap.to_rgba(k)
@@ -714,7 +715,7 @@ class Viz:
         der_fit = np.real(np.gradient(p(y_outside), y_outside))
         der2_fit = np.gradient(der_fit, y_outside)
         index_min = np.argmin(np.abs(y_outside - min_pos))
-        moment2 = der2_fit[index_min]
+        moment2 = der2_fit[index_min+1]
         trap_freq = np.sqrt((moment2 * kB * mK) / (self.simul.atomicsystem.mass)) * (1 / (2 * np.pi))
         return trap_freq
     
@@ -749,11 +750,14 @@ class Viz:
         print("zero crossings", zero_crossings_i)
         # print("min index", min_pos_index)
         zeros = findKClosestElements(zero_crossings_i, 2, min_pos_index)
-        print(zeros)
-        hmx = [lin_interp(y_outside, absy, zeros[0], half),
-                lin_interp(y_outside, absy, zeros[1], half)]
-        fwhm = np.abs(hmx[1] - hmx[0])
-        return fwhm
+        # print(zeros)
+        try:
+            hmx = [lin_interp(y_outside, absy, zeros[0], half),
+                    lin_interp(y_outside, absy, zeros[1], half)]
+            fwhm = np.abs(hmx[1] - hmx[0])
+            return fwhm
+        except :
+            return np.nan
 
     def ellipticity_plot(self, projection_axis):
         if self.simul.dimension == "2D":
