@@ -295,6 +295,10 @@ class BeamSum(Beams):
             power (float): new power to be set for the two beams (W)
 
         """
+        
+        if isinstance(powers, float) :
+            powers = powers*np.ones(len(self.beams))
+            
         if len(powers) != len(self.beams) :
             raise ValueError("Please specify as many new powers as there are beams in the BeamSum object")
 

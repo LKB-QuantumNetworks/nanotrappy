@@ -268,24 +268,45 @@ class atomicsystem:
         self.listlevels = []
         self.dicoatom = {}
 
-        if self._state.j == 1 / 2 and self._state.l == 0 and self.Nground == self._state.n:
-            self.groundstate = self._state
-            for jnumber in [0.5, 1.5]:
-                for nnumber in range(self.Nground, self.Nground + self.rangeN + 1):
-                    self.listlevels.append(atomiclevel(nnumber, P, jnumber))
-                    self.dicoatom[(nnumber, P, jnumber)] = (
-                        atom.getTransitionFrequency(
-                            self.groundstate.n, self.groundstate.l, self.groundstate.j, nnumber, P, jnumber
-                        ),
-                        atom.getReducedMatrixElementJ(
-                            self.groundstate.n, self.groundstate.l, self.groundstate.j, nnumber, P, jnumber
-                        ),
-                        atom.getTransitionRate(
-                            nnumber, P, jnumber, self.groundstate.n, self.groundstate.l, self.groundstate.j
-                        ),
-                    )
-
-        elif self._state.j != 1 / 2 or self._state.l != 0 or self.Nground != self._state.n:
+        # if self._state.j == 1 / 2 and self._state.l == 0 and self.Nground == self._state.n:
+        if self._state.j == 1 / 2 and self._state.l == 0:
+            if self.Nground == self._state.n :
+                self.groundstate = self._state
+                for jnumber in [0.5, 1.5]:
+                    for nnumber in range(self.Nground, self.Nground + self.rangeN + 1):
+                        self.listlevels.append(atomiclevel(nnumber, P, jnumber))
+                        self.dicoatom[(nnumber, P, jnumber)] = (
+                            atom.getTransitionFrequency(
+                                self.groundstate.n, self.groundstate.l, self.groundstate.j, nnumber, P, jnumber
+                            ),
+                            atom.getReducedMatrixElementJ(
+                                self.groundstate.n, self.groundstate.l, self.groundstate.j, nnumber, P, jnumber
+                            ),
+                            atom.getTransitionRate(
+                                nnumber, P, jnumber, self.groundstate.n, self.groundstate.l, self.groundstate.j
+                            ),
+                        )
+            else : #Corresponds only to the mS1/2 states, so no need to include the ground states as it is not coupled, but include the lower P states
+                self.groundstate = self._state
+                for jnumber in [0.5, 1.5]:
+                    for nnumber in range(self.Nground, self.Nground + self.rangeN + 1):
+                        self.listlevels.append(atomiclevel(nnumber, P, jnumber))
+                        self.dicoatom[(nnumber, P, jnumber)] = (
+                            atom.getTransitionFrequency(
+                                self._state.n, self._state.l, self._state.j, nnumber, P, jnumber
+                            ),
+                            atom.getReducedMatrixElementJ(
+                                self._state.n, self._state.l, self._state.j, nnumber, P, jnumber
+                            ),
+                            atom.getTransitionRate(
+                                nnumber, P, jnumber, self._state.n, self._state.l, self._state.j
+                            ),
+                        )
+            
+        # elif self._state.j != 1 / 2 or self._state.l != 0 or self.Nground != self._state.n:
+        elif self._state.j != 1 / 2 or self._state.l != 0: #Only valid for P1/2 and P3/2 states with the same principal number
+            if self.Nground != self._state.n :
+                raise ValueError("Support for atomic systems with l > 0 and n > n_ground_state not yet implemented")
             self.groundstate = atomiclevel(self.Nground, 0, 1 / 2)
             self.excitedstate = self._state
             self.listlevels.append(self.groundstate)
@@ -333,6 +354,7 @@ class atomicsystem:
                         nnumber, S, jnumber, self.excitedstate.n, self.excitedstate.l, self.excitedstate.j
                     ),
                 )
+                
 
             ##D3/2 and D5/2 levels
             for jnumber in [3 / 2, 5 / 2]:
@@ -724,4 +746,4 @@ class atomicsystem:
             C3 = hbar / (4 * np.pi) * np.sum(trap)
         if units == "au":
             C3 = hbar / ((4 * np.pi) * np.sum(trap) * (a0 ** 3 * EH))
-        return C3
+        return C3, xi, alphaim, I

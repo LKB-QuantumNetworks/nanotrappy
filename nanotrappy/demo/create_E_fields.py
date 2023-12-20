@@ -18,8 +18,11 @@ z = np.array([0])
 P = 1  # in Watts
 theta = 0  # radians
 E_red = nanof.compute_E_linear(x, y, z, wavelength_red, P, theta)
+#%%
 E_blue_fwd = nanof.compute_E_linear(x, y, z, wavelength_blue_fwd, P, theta)
 E_blue_bwd = nanof.compute_E_linear(x, y, z, wavelength_blue_bwd, P, theta)
-np.save("./testfolder/modeblue685.npy", [wavelength_blue_fwd, x, y, z, E_blue_fwd])
-np.save("./testfolder/modeblue2685.npy", [wavelength_blue_bwd, x, y, z, E_blue_bwd])
-np.save("./testfolder/modered937.npy", [wavelength_red, x, y, z, E_red])
+#%%
+np.save("./testfolder/modeblue685.npy", np.array([wavelength_blue_fwd, x, y, z,E_blue_fwd], dtype = object))
+#%%
+np.save("./testfolder/modeblue2685.npy", np.array([wavelength_blue_bwd, x, y, z, E_blue_bwd], dtype = object))
+np.save("./testfolder/modered937.npy", np.array([wavelength_red, x, y, z, E_red], dtype = object))
