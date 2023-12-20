@@ -120,8 +120,7 @@ def check_mf(f, mf):
         mf = np.array([mf])
     else:
         mf = np.array(mf)
-        
-    # if mf > f or mf < -f:
+  
     if any(mf > f) or any(mf < -f):
         raise ValueError("m_F should be in the interval [-F,F]")
     else:
