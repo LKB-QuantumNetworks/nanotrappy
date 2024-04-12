@@ -4,22 +4,18 @@ from nanotrappy.utils.physicalunits import *
 import numpy as np
 import time, os, sys
 import matplotlib.pyplot as plt
-dir_path = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(dir_path)
-sys.path.insert(0, parentdir) 
-import SLM_scripts as slms
-import os
-
-subfolder = r"\testfolder_FFT_2Dxy"
-dir_path = os.path.dirname(os.path.realpath(__file__))
-
-f0 = 0.4
-lmbda = 1064e-9
-NA = 0.4
-f = 10e-3 
+from beam_prop import DebyeWolfPropagator, LG_Beam
+ 
+f0 = 0.4 #Set filling fraction ie waist of incoming beam/aperture radius of the objective
+lmbda = 1064e-9 #trapping wavelength
+NA = 0.4 #numerical aperture of the objective
+f = 10e-3 #Focal length of the objective
 k = 2*np.pi/lmbda
-#%% Define focusing parameters
-w0 = f0*f*NA #input waist
+
+#%% Compute the 2D tweezer field and save them in the subfolder
+
+#Define focusing parameters
+w0 = f0*f*NA #waist at the input plane of the objective w0
 zR_1 = (np.pi*w0**2)/lmbda #input zR
 w0_2 = f*lmbda/(np.pi*w0) #output waist
 zR_2 = (np.pi*w0_2**2)/lmbda #output zR
@@ -40,10 +36,14 @@ z = zi[0]
 z_out = 0
 xm, ym, zm = np.meshgrid(xi,yi,zi, indexing ='ij')
 
+#Set folder name and path for saving the beam intensity profiles
+subfolder = r"\testfolder_FFT_2Dxy"
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 plist = [0,2,4]
 for i in range(len(plist)):
     p = plist[i]
-    LG = slms.LG_Beam(p,0,lmbda,w0, power = 1)
+    LG = LG_Beam(p,0,lmbda,w0, power = 1)
     LGs = [LG]
     #Create input beam polarized along x
     Ex_red = LGs[0].field(xm,ym,zm)
@@ -52,21 +52,20 @@ for i in range(len(plist)):
     E_red = np.stack((Ex_red,Ey_red,Ez_red))
 
     # Propagate beam to the focus
-    DBP = slms.DebyeWolfPropagator(xi, yi, zi, E_red, lmbda, z_out)
+    DBP = DebyeWolfPropagator(xi, yi, zi, E_red, lmbda, z_out)
     DBP.set_focusing_object(f, NA) #set characteristics of focusing object
     DBP.set_integration_params(M = 25) #M is the number of samples to compute the FFT. If the beam is big (for high z), this should be increased
     fftarray = DBP.propagate(n_pad)
     fftarray = fftarray.astype(np.complex64)
-
-
+    
     arr = [lmbda, DBP.xf, DBP.yf, [z_out], np.expand_dims(fftarray,-1)]
     save_arr = np.empty(len(arr), object)
     save_arr[:] = arr  
     try:
-        np.save(dir_path + subfolder + "\\LG" + str(p) + "0_1064_f0=" + str(np.round(f0,2)).ljust(5, '0') + ".npy", save_arr)
+        np.save(dir_path + subfolder + "\\LG" + str(p) + "0_" + str(lmbda*1e9) + "_f0=" + str(np.round(f0,2)).ljust(5, '0') + ".npy", save_arr)
     except FileNotFoundError:
         os.mkdir(dir_path + subfolder)
-        np.save(dir_path+ subfolder + "\\LG" + str(p) + "0_1064_f0=" + str(np.round(f0,2)).ljust(5, '0') + ".npy", save_arr)
+        np.save(dir_path+ subfolder + "\\LG" + str(p) + "0_" + str(lmbda*1e9) + "_f0=" + str(np.round(f0,2)).ljust(5, '0') + ".npy", save_arr)
 
 #%% Then analyze the fields to compute the tweezers
 datafolder = os.path.dirname(os.path.abspath(__file__)) + subfolder
@@ -78,7 +77,7 @@ beam = nt.Beam(1064e-9,"f",3*mW, 0)
 #LG sum tweezer, with the same intensities
 beam_sum = nt.BeamSum([1064e-9,1064e-9,1064e-9], [1*mW,1*mW,1*mW],indices = [0, 1, 2])
 
-trap = nt.Trap_beams(beam)
+trap = nt.Trap_beams(beam) #choose here between the two different strategies
 syst = nt.atomicsystem(nt.Rubidium87(), "5S1/2", f2)
 Simul = nt.Simulation(syst, nt.SiO2(), trap, datafolder)
 

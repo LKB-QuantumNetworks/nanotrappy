@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from nanotrappy.utils.physicalunits import *
 
 if __name__ == "__main__":
-
     #Choose the folder where you electric fields are stored
     datafolder = os.path.dirname(os.path.abspath(__file__)) + "\\testfolder"
 
